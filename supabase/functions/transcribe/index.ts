@@ -17,52 +17,84 @@ function detectPlatform(url: string): string {
 async function extractAudioUrl(videoUrl: string): Promise<{ url: string; filename: string } | null> {
   console.log('Extracting audio from:', videoUrl);
   
-  try {
-    // Use cobalt.tools API (free, supports YouTube, TikTok, Instagram)
-    const cobaltResponse = await fetch('https://api.cobalt.tools/api/json', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        url: videoUrl,
-        isAudioOnly: true,
-        aFormat: 'mp3',
-        filenamePattern: 'basic',
-      }),
-    });
+  // Try multiple cobalt instances for reliability
+  const cobaltInstances = [
+    'https://api.cobalt.tools',
+    'https://cobalt-api.hyper.lol',
+    'https://co.wuk.sh',
+  ];
 
-    if (!cobaltResponse.ok) {
-      console.error('Cobalt API error:', cobaltResponse.status);
-      return null;
+  for (const instance of cobaltInstances) {
+    try {
+      console.log(`Trying cobalt instance: ${instance}`);
+      
+      const cobaltResponse = await fetch(`${instance}/api/json`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        },
+        body: JSON.stringify({
+          url: videoUrl,
+          vCodec: 'h264',
+          vQuality: '720',
+          aFormat: 'mp3',
+          isAudioOnly: true,
+          filenamePattern: 'basic',
+          dubLang: false,
+        }),
+      });
+
+      const responseText = await cobaltResponse.text();
+      console.log(`Cobalt response from ${instance}:`, responseText.substring(0, 500));
+
+      if (!cobaltResponse.ok) {
+        console.error(`Cobalt API error from ${instance}:`, cobaltResponse.status);
+        continue;
+      }
+
+      const cobaltData = JSON.parse(responseText);
+
+      // Handle different response formats
+      if (cobaltData.url) {
+        return {
+          url: cobaltData.url,
+          filename: cobaltData.filename || 'audio.mp3',
+        };
+      }
+
+      if (cobaltData.status === 'stream' || cobaltData.status === 'redirect') {
+        return {
+          url: cobaltData.url,
+          filename: cobaltData.filename || 'audio.mp3',
+        };
+      }
+
+      if (cobaltData.status === 'picker' && cobaltData.picker?.length > 0) {
+        const audioOption = cobaltData.picker.find((p: any) => p.type === 'audio') || cobaltData.picker[0];
+        return {
+          url: audioOption.url,
+          filename: 'audio.mp3',
+        };
+      }
+
+      // New API format
+      if (cobaltData.audio) {
+        return {
+          url: cobaltData.audio,
+          filename: 'audio.mp3',
+        };
+      }
+
+      console.log(`Unexpected response format from ${instance}`);
+    } catch (error) {
+      console.error(`Error with ${instance}:`, error);
     }
-
-    const cobaltData = await cobaltResponse.json();
-    console.log('Cobalt response:', cobaltData);
-
-    if (cobaltData.status === 'stream' || cobaltData.status === 'redirect') {
-      return {
-        url: cobaltData.url,
-        filename: cobaltData.filename || 'audio.mp3',
-      };
-    }
-
-    if (cobaltData.status === 'picker' && cobaltData.picker?.length > 0) {
-      // For TikTok/Instagram with multiple options, pick the first audio
-      const audioOption = cobaltData.picker.find((p: any) => p.type === 'audio') || cobaltData.picker[0];
-      return {
-        url: audioOption.url,
-        filename: 'audio.mp3',
-      };
-    }
-
-    console.error('Cobalt returned unexpected status:', cobaltData.status);
-    return null;
-  } catch (error) {
-    console.error('Error extracting audio:', error);
-    return null;
   }
+
+  console.error('All cobalt instances failed');
+  return null;
 }
 
 async function downloadAudio(audioUrl: string): Promise<Uint8Array | null> {
