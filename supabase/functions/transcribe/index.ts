@@ -18,22 +18,31 @@ async function transcribeWithSupadata(videoUrl: string, supadataKey: string): Pr
   console.log('Transcribing with Supadata:', videoUrl);
   
   try {
-    const response = await fetch('https://api.supadata.ai/v1/transcript', {
-      method: 'POST',
+    // Build URL with query parameters (Supadata uses GET, not POST)
+    const encodedUrl = encodeURIComponent(videoUrl);
+    const apiUrl = `https://api.supadata.ai/v1/transcript?url=${encodedUrl}&text=true&mode=auto`;
+    
+    console.log('Calling Supadata API:', apiUrl);
+    
+    const response = await fetch(apiUrl, {
+      method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
         'x-api-key': supadataKey,
       },
-      body: JSON.stringify({
-        url: videoUrl,
-        text: true, // Return plain text
-        mode: 'auto', // Auto-detect if native captions exist, otherwise generate
-      }),
     });
 
     const responseText = await response.text();
     console.log('Supadata response status:', response.status);
     console.log('Supadata response:', responseText.substring(0, 500));
+
+    // Handle async processing (202 response)
+    if (response.status === 202) {
+      const jobData = JSON.parse(responseText);
+      if (jobData.jobId) {
+        console.log('Job started, polling for result:', jobData.jobId);
+        return await pollForResult(jobData.jobId, supadataKey);
+      }
+    }
 
     if (!response.ok) {
       console.error('Supadata API error:', response.status, responseText);
@@ -42,7 +51,7 @@ async function transcribeWithSupadata(videoUrl: string, supadataKey: string): Pr
 
     const data = JSON.parse(responseText);
     
-    // Handle different response formats
+    // Handle text=true response format
     if (data.content) {
       return { 
         text: data.content, 
@@ -50,14 +59,7 @@ async function transcribeWithSupadata(videoUrl: string, supadataKey: string): Pr
       };
     }
     
-    if (data.text) {
-      return { 
-        text: data.text, 
-        lang: data.lang || 'auto' 
-      };
-    }
-
-    // If we got chunks/segments, combine them
+    // Handle chunks format (text=false)
     if (data.chunks && Array.isArray(data.chunks)) {
       const combinedText = data.chunks.map((c: any) => c.text || c.content).join(' ');
       return { 
@@ -72,6 +74,47 @@ async function transcribeWithSupadata(videoUrl: string, supadataKey: string): Pr
     console.error('Supadata error:', error);
     return null;
   }
+}
+
+async function pollForResult(jobId: string, supadataKey: string, maxAttempts = 30): Promise<{ text: string; lang: string } | null> {
+  const pollUrl = `https://api.supadata.ai/v1/transcript/${jobId}`;
+  
+  for (let i = 0; i < maxAttempts; i++) {
+    console.log(`Polling attempt ${i + 1}/${maxAttempts}`);
+    
+    await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds between polls
+    
+    const response = await fetch(pollUrl, {
+      method: 'GET',
+      headers: {
+        'x-api-key': supadataKey,
+      },
+    });
+
+    if (response.status === 202) {
+      // Still processing
+      continue;
+    }
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.content) {
+        return { text: data.content, lang: data.lang || 'auto' };
+      }
+      if (data.chunks && Array.isArray(data.chunks)) {
+        const combinedText = data.chunks.map((c: any) => c.text || c.content).join(' ');
+        return { text: combinedText, lang: data.lang || 'auto' };
+      }
+    }
+
+    if (!response.ok && response.status !== 202) {
+      console.error('Poll error:', response.status);
+      return null;
+    }
+  }
+
+  console.error('Polling timeout');
+  return null;
 }
 
 serve(async (req) => {
