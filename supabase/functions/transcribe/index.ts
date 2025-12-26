@@ -14,87 +14,128 @@ function detectPlatform(url: string): string {
   return 'unknown';
 }
 
-async function extractAudioUrl(videoUrl: string): Promise<{ url: string; filename: string } | null> {
-  console.log('Extracting audio from:', videoUrl);
+async function extractAudioUrl(videoUrl: string, platform: string): Promise<{ url: string; filename: string } | null> {
+  console.log('Extracting audio from:', videoUrl, 'platform:', platform);
   
-  // Try multiple cobalt instances for reliability
+  // Try cobalt v10 instances
   const cobaltInstances = [
-    'https://api.cobalt.tools',
-    'https://cobalt-api.hyper.lol',
-    'https://co.wuk.sh',
+    'https://api.cobalt.best',
+    'https://cobalt-api.kwiatekmiki.com',
   ];
 
   for (const instance of cobaltInstances) {
     try {
-      console.log(`Trying cobalt instance: ${instance}`);
+      console.log(`Trying cobalt v10 instance: ${instance}`);
       
-      const cobaltResponse = await fetch(`${instance}/api/json`, {
+      const cobaltResponse = await fetch(instance, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         },
         body: JSON.stringify({
           url: videoUrl,
-          vCodec: 'h264',
-          vQuality: '720',
-          aFormat: 'mp3',
-          isAudioOnly: true,
-          filenamePattern: 'basic',
-          dubLang: false,
+          downloadMode: 'audio',
+          audioFormat: 'mp3',
         }),
       });
 
       const responseText = await cobaltResponse.text();
-      console.log(`Cobalt response from ${instance}:`, responseText.substring(0, 500));
+      console.log(`Response from ${instance}:`, responseText.substring(0, 500));
 
       if (!cobaltResponse.ok) {
-        console.error(`Cobalt API error from ${instance}:`, cobaltResponse.status);
+        console.error(`API error from ${instance}:`, cobaltResponse.status);
         continue;
       }
 
-      const cobaltData = JSON.parse(responseText);
+      const data = JSON.parse(responseText);
 
-      // Handle different response formats
-      if (cobaltData.url) {
-        return {
-          url: cobaltData.url,
-          filename: cobaltData.filename || 'audio.mp3',
-        };
+      if (data.url) {
+        return { url: data.url, filename: 'audio.mp3' };
       }
-
-      if (cobaltData.status === 'stream' || cobaltData.status === 'redirect') {
-        return {
-          url: cobaltData.url,
-          filename: cobaltData.filename || 'audio.mp3',
-        };
+      if (data.status === 'tunnel' || data.status === 'redirect' || data.status === 'stream') {
+        return { url: data.url, filename: 'audio.mp3' };
       }
-
-      if (cobaltData.status === 'picker' && cobaltData.picker?.length > 0) {
-        const audioOption = cobaltData.picker.find((p: any) => p.type === 'audio') || cobaltData.picker[0];
-        return {
-          url: audioOption.url,
-          filename: 'audio.mp3',
-        };
+      if (data.audio) {
+        return { url: data.audio, filename: 'audio.mp3' };
       }
-
-      // New API format
-      if (cobaltData.audio) {
-        return {
-          url: cobaltData.audio,
-          filename: 'audio.mp3',
-        };
-      }
-
-      console.log(`Unexpected response format from ${instance}`);
-    } catch (error) {
-      console.error(`Error with ${instance}:`, error);
+      
+      console.log('Unexpected response format from', instance);
+    } catch (err) {
+      console.error(`Error with ${instance}:`, err);
     }
   }
 
-  console.error('All cobalt instances failed');
+  // Fallback for YouTube: use ytdl-core style extraction
+  if (platform === 'youtube') {
+    console.log('Trying YouTube fallback extraction...');
+    return await extractYouTubeAudioFallback(videoUrl);
+  }
+
+  console.error('All extraction methods failed');
   return null;
+}
+
+async function extractYouTubeAudioFallback(videoUrl: string): Promise<{ url: string; filename: string } | null> {
+  try {
+    // Extract video ID
+    let videoId = '';
+    if (videoUrl.includes('youtu.be/')) {
+      videoId = videoUrl.split('youtu.be/')[1]?.split('?')[0] || '';
+    } else if (videoUrl.includes('v=')) {
+      const urlObj = new URL(videoUrl);
+      videoId = urlObj.searchParams.get('v') || '';
+    }
+    
+    if (!videoId) {
+      console.error('Could not extract YouTube video ID');
+      return null;
+    }
+
+    console.log('Extracted video ID:', videoId);
+
+    // Try YouTube oEmbed to verify video exists
+    const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(videoUrl)}&format=json`;
+    const oembedRes = await fetch(oembedUrl);
+    
+    if (!oembedRes.ok) {
+      console.error('Video not found or not public');
+      return null;
+    }
+
+    // Use alternative services
+    const services = [
+      `https://api.vevioz.com/api/button/mp3/${videoId}`,
+    ];
+
+    for (const serviceUrl of services) {
+      try {
+        console.log('Trying service:', serviceUrl);
+        const response = await fetch(serviceUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          },
+        });
+
+        if (response.ok) {
+          const html = await response.text();
+          // Look for download links in the response
+          const downloadMatch = html.match(/href="(https:\/\/[^"]+\.mp3[^"]*)"/);
+          if (downloadMatch && downloadMatch[1]) {
+            console.log('Found MP3 link:', downloadMatch[1]);
+            return { url: downloadMatch[1], filename: 'audio.mp3' };
+          }
+        }
+      } catch (err) {
+        console.error('Service error:', err);
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error('YouTube extraction error:', error);
+    return null;
+  }
 }
 
 async function downloadAudio(audioUrl: string): Promise<Uint8Array | null> {
@@ -125,12 +166,10 @@ async function transcribeWithWhisper(audioData: Uint8Array, openaiKey: string): 
   console.log('Transcribing with Whisper...');
   
   try {
-    // Create form data for Whisper API
     const formData = new FormData();
     const blob = new Blob([audioData.buffer as ArrayBuffer], { type: 'audio/mpeg' });
     formData.append('file', blob, 'audio.mp3');
     formData.append('model', 'whisper-1');
-    formData.append('language', 'es'); // Support Spanish and English
     formData.append('response_format', 'text');
 
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
@@ -176,7 +215,6 @@ serve(async (req) => {
       throw new Error('OPENAI_API_KEY not configured');
     }
 
-    // Get user from token
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     
@@ -192,30 +230,26 @@ serve(async (req) => {
 
     const platform = detectPlatform(url);
     if (platform === 'unknown') {
-      throw new Error('Unsupported platform. Please use YouTube, TikTok, or Instagram URLs.');
+      throw new Error('Plataforma no soportada. Usa URLs de YouTube, TikTok o Instagram.');
     }
 
     console.log(`Processing ${platform} video: ${url}`);
 
-    // Step 1: Extract audio URL from video
-    const audioInfo = await extractAudioUrl(url);
+    const audioInfo = await extractAudioUrl(url, platform);
     if (!audioInfo) {
-      throw new Error(`No se pudo extraer el audio del video de ${platform}. Verifica que la URL sea válida y el video sea público.`);
+      throw new Error(`No se pudo extraer el audio del video de ${platform}. Verifica que la URL sea válida y el video sea público. Las APIs de extracción gratuitas tienen limitaciones - considera usar la opción de subir archivo.`);
     }
 
-    // Step 2: Download the audio file
     const audioData = await downloadAudio(audioInfo.url);
     if (!audioData) {
       throw new Error('No se pudo descargar el audio. El video puede tener restricciones.');
     }
 
-    // Step 3: Transcribe with Whisper
     const transcript = await transcribeWithWhisper(audioData, openaiKey);
     if (!transcript) {
       throw new Error('Error al transcribir el audio. Intenta de nuevo.');
     }
 
-    // Save to database
     const finalTitle = title || `Transcripción ${platform} - ${new Date().toLocaleDateString('es')}`;
     
     const { data: transcription, error: insertError } = await supabase
@@ -226,14 +260,14 @@ serve(async (req) => {
         url: url,
         platform: platform,
         transcript: transcript,
-        language: 'es',
+        language: 'auto',
       })
       .select()
       .single();
 
     if (insertError) {
       console.error('Insert error:', insertError);
-      throw new Error('Failed to save transcription');
+      throw new Error('Error al guardar la transcripción');
     }
 
     console.log('Transcription saved successfully');
