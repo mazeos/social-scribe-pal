@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   Loader2, LogOut, Plus, Search, Youtube, 
-  FileText, Download, Trash2, Clock, ExternalLink 
+  FileText, Download, Trash2, Clock, ExternalLink, Settings 
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -107,6 +107,9 @@ export default function Dashboard() {
             <span className="hidden text-sm text-muted-foreground sm:block">
               {user?.email}
             </span>
+            <Button variant="ghost" size="icon" onClick={() => navigate('/settings')}>
+              <Settings className="h-5 w-5" />
+            </Button>
             <Button variant="ghost" size="icon" onClick={handleLogout}>
               <LogOut className="h-5 w-5" />
             </Button>
