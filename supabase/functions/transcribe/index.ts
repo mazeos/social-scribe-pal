@@ -19,8 +19,9 @@ async function transcribeWithSupadata(videoUrl: string, supadataKey: string): Pr
   
   try {
     // Build URL with query parameters (Supadata uses GET, not POST)
+    // Use mode=generate to always transcribe the actual audio (not use native captions which may be in wrong language)
     const encodedUrl = encodeURIComponent(videoUrl);
-    const apiUrl = `https://api.supadata.ai/v1/transcript?url=${encodedUrl}&text=true&mode=auto`;
+    const apiUrl = `https://api.supadata.ai/v1/transcript?url=${encodedUrl}&text=true&mode=generate`;
     
     console.log('Calling Supadata API:', apiUrl);
     
