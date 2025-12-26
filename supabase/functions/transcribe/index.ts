@@ -14,183 +14,62 @@ function detectPlatform(url: string): string {
   return 'unknown';
 }
 
-async function extractAudioUrl(videoUrl: string, platform: string): Promise<{ url: string; filename: string } | null> {
-  console.log('Extracting audio from:', videoUrl, 'platform:', platform);
-  
-  // Try cobalt v10 instances
-  const cobaltInstances = [
-    'https://api.cobalt.best',
-    'https://cobalt-api.kwiatekmiki.com',
-  ];
-
-  for (const instance of cobaltInstances) {
-    try {
-      console.log(`Trying cobalt v10 instance: ${instance}`);
-      
-      const cobaltResponse = await fetch(instance, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          url: videoUrl,
-          downloadMode: 'audio',
-          audioFormat: 'mp3',
-        }),
-      });
-
-      const responseText = await cobaltResponse.text();
-      console.log(`Response from ${instance}:`, responseText.substring(0, 500));
-
-      if (!cobaltResponse.ok) {
-        console.error(`API error from ${instance}:`, cobaltResponse.status);
-        continue;
-      }
-
-      const data = JSON.parse(responseText);
-
-      if (data.url) {
-        return { url: data.url, filename: 'audio.mp3' };
-      }
-      if (data.status === 'tunnel' || data.status === 'redirect' || data.status === 'stream') {
-        return { url: data.url, filename: 'audio.mp3' };
-      }
-      if (data.audio) {
-        return { url: data.audio, filename: 'audio.mp3' };
-      }
-      
-      console.log('Unexpected response format from', instance);
-    } catch (err) {
-      console.error(`Error with ${instance}:`, err);
-    }
-  }
-
-  // Fallback for YouTube: use ytdl-core style extraction
-  if (platform === 'youtube') {
-    console.log('Trying YouTube fallback extraction...');
-    return await extractYouTubeAudioFallback(videoUrl);
-  }
-
-  console.error('All extraction methods failed');
-  return null;
-}
-
-async function extractYouTubeAudioFallback(videoUrl: string): Promise<{ url: string; filename: string } | null> {
-  try {
-    // Extract video ID
-    let videoId = '';
-    if (videoUrl.includes('youtu.be/')) {
-      videoId = videoUrl.split('youtu.be/')[1]?.split('?')[0] || '';
-    } else if (videoUrl.includes('v=')) {
-      const urlObj = new URL(videoUrl);
-      videoId = urlObj.searchParams.get('v') || '';
-    }
-    
-    if (!videoId) {
-      console.error('Could not extract YouTube video ID');
-      return null;
-    }
-
-    console.log('Extracted video ID:', videoId);
-
-    // Try YouTube oEmbed to verify video exists
-    const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(videoUrl)}&format=json`;
-    const oembedRes = await fetch(oembedUrl);
-    
-    if (!oembedRes.ok) {
-      console.error('Video not found or not public');
-      return null;
-    }
-
-    // Use alternative services
-    const services = [
-      `https://api.vevioz.com/api/button/mp3/${videoId}`,
-    ];
-
-    for (const serviceUrl of services) {
-      try {
-        console.log('Trying service:', serviceUrl);
-        const response = await fetch(serviceUrl, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          },
-        });
-
-        if (response.ok) {
-          const html = await response.text();
-          // Look for download links in the response
-          const downloadMatch = html.match(/href="(https:\/\/[^"]+\.mp3[^"]*)"/);
-          if (downloadMatch && downloadMatch[1]) {
-            console.log('Found MP3 link:', downloadMatch[1]);
-            return { url: downloadMatch[1], filename: 'audio.mp3' };
-          }
-        }
-      } catch (err) {
-        console.error('Service error:', err);
-      }
-    }
-
-    return null;
-  } catch (error) {
-    console.error('YouTube extraction error:', error);
-    return null;
-  }
-}
-
-async function downloadAudio(audioUrl: string): Promise<Uint8Array | null> {
-  console.log('Downloading audio from:', audioUrl);
+async function transcribeWithSupadata(videoUrl: string, supadataKey: string): Promise<{ text: string; lang: string } | null> {
+  console.log('Transcribing with Supadata:', videoUrl);
   
   try {
-    const response = await fetch(audioUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      },
-    });
-
-    if (!response.ok) {
-      console.error('Failed to download audio:', response.status);
-      return null;
-    }
-
-    const arrayBuffer = await response.arrayBuffer();
-    console.log('Downloaded audio size:', arrayBuffer.byteLength);
-    return new Uint8Array(arrayBuffer);
-  } catch (error) {
-    console.error('Error downloading audio:', error);
-    return null;
-  }
-}
-
-async function transcribeWithWhisper(audioData: Uint8Array, openaiKey: string): Promise<string | null> {
-  console.log('Transcribing with Whisper...');
-  
-  try {
-    const formData = new FormData();
-    const blob = new Blob([audioData.buffer as ArrayBuffer], { type: 'audio/mpeg' });
-    formData.append('file', blob, 'audio.mp3');
-    formData.append('model', 'whisper-1');
-    formData.append('response_format', 'text');
-
-    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+    const response = await fetch('https://api.supadata.ai/v1/transcript', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openaiKey}`,
+        'Content-Type': 'application/json',
+        'x-api-key': supadataKey,
       },
-      body: formData,
+      body: JSON.stringify({
+        url: videoUrl,
+        text: true, // Return plain text
+        mode: 'auto', // Auto-detect if native captions exist, otherwise generate
+      }),
     });
 
+    const responseText = await response.text();
+    console.log('Supadata response status:', response.status);
+    console.log('Supadata response:', responseText.substring(0, 500));
+
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Whisper API error:', response.status, errorText);
+      console.error('Supadata API error:', response.status, responseText);
       return null;
     }
 
-    const transcript = await response.text();
-    console.log('Transcription complete, length:', transcript.length);
-    return transcript;
+    const data = JSON.parse(responseText);
+    
+    // Handle different response formats
+    if (data.content) {
+      return { 
+        text: data.content, 
+        lang: data.lang || 'auto' 
+      };
+    }
+    
+    if (data.text) {
+      return { 
+        text: data.text, 
+        lang: data.lang || 'auto' 
+      };
+    }
+
+    // If we got chunks/segments, combine them
+    if (data.chunks && Array.isArray(data.chunks)) {
+      const combinedText = data.chunks.map((c: any) => c.text || c.content).join(' ');
+      return { 
+        text: combinedText, 
+        lang: data.lang || 'auto' 
+      };
+    }
+
+    console.error('Unexpected Supadata response format:', data);
+    return null;
   } catch (error) {
-    console.error('Error transcribing:', error);
+    console.error('Supadata error:', error);
     return null;
   }
 }
@@ -208,11 +87,11 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const openaiKey = Deno.env.get('OPENAI_API_KEY');
+    const supadataKey = Deno.env.get('SUPADATA_API_KEY');
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    if (!openaiKey) {
-      throw new Error('OPENAI_API_KEY not configured');
+    if (!supadataKey) {
+      throw new Error('SUPADATA_API_KEY not configured. Por favor configura tu API key de Supadata.');
     }
 
     const token = authHeader.replace('Bearer ', '');
@@ -235,19 +114,11 @@ serve(async (req) => {
 
     console.log(`Processing ${platform} video: ${url}`);
 
-    const audioInfo = await extractAudioUrl(url, platform);
-    if (!audioInfo) {
-      throw new Error(`No se pudo extraer el audio del video de ${platform}. Verifica que la URL sea válida y el video sea público. Las APIs de extracción gratuitas tienen limitaciones - considera usar la opción de subir archivo.`);
-    }
-
-    const audioData = await downloadAudio(audioInfo.url);
-    if (!audioData) {
-      throw new Error('No se pudo descargar el audio. El video puede tener restricciones.');
-    }
-
-    const transcript = await transcribeWithWhisper(audioData, openaiKey);
-    if (!transcript) {
-      throw new Error('Error al transcribir el audio. Intenta de nuevo.');
+    // Use Supadata to transcribe directly from URL
+    const result = await transcribeWithSupadata(url, supadataKey);
+    
+    if (!result || !result.text) {
+      throw new Error(`No se pudo transcribir el video de ${platform}. Verifica que la URL sea válida, el video sea público y tenga audio.`);
     }
 
     const finalTitle = title || `Transcripción ${platform} - ${new Date().toLocaleDateString('es')}`;
@@ -259,8 +130,8 @@ serve(async (req) => {
         title: finalTitle,
         url: url,
         platform: platform,
-        transcript: transcript,
-        language: 'auto',
+        transcript: result.text,
+        language: result.lang,
       })
       .select()
       .single();
@@ -270,7 +141,7 @@ serve(async (req) => {
       throw new Error('Error al guardar la transcripción');
     }
 
-    console.log('Transcription saved successfully');
+    console.log('Transcription saved successfully, length:', result.text.length);
 
     return new Response(
       JSON.stringify({ 
