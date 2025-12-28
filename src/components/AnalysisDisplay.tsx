@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Brain, User, Users, Lightbulb, Copy, Check, ArrowRight, Target, Repeat, Sparkles } from 'lucide-react';
+import { Brain, User, Users, Lightbulb, Copy, Check, Target, Repeat, Sparkles, ArrowRight, Quote, Zap } from 'lucide-react';
 import {
   Accordion,
   AccordionContent,
@@ -9,17 +9,40 @@ import {
 } from '@/components/ui/accordion';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 
-interface SectionAnalysis {
+interface Personalidad {
+  rol: string;
+  personaje: string;
+  nombre?: string;
+  justificacion: string;
+}
+
+interface Transicion {
+  cita: string;
+  creador_p: string;
+  creador_porque: string;
+  receptor_p: string;
+  receptor_porque: string;
+}
+
+interface HookSection {
   transcripcion_exacta?: string;
+  personalidades?: Personalidad[];
+  mecanismo_retencion?: string[];
+}
+
+interface BodySection {
   estructura_identificada?: string;
-  creador_personaje?: string;
-  creador_justificacion?: string;
-  receptor_personaje?: string;
-  receptor_justificacion?: string;
-  mecanismo_retencion?: string;
-  transiciones?: string;
+  personalidades?: Personalidad[];
+  transiciones?: Transicion[];
+}
+
+interface CtaSection {
+  transcripcion_exacta?: string;
+  personalidades?: Personalidad[];
   tipo_cta?: string;
+  descripcion_cta?: string;
 }
 
 interface AnalysisData {
@@ -32,12 +55,13 @@ interface AnalysisData {
     nivel: string;
     justificacion: string;
   };
-  hook?: SectionAnalysis;
-  body?: SectionAnalysis;
-  cta?: SectionAnalysis;
+  hook?: HookSection;
+  body?: BodySection;
+  cta?: CtaSection;
   secuencia_personajes?: {
     creador: string;
     receptor: string;
+    patron_dominante?: string;
   };
   formula_replicable?: {
     template: string;
@@ -48,38 +72,14 @@ interface AnalysisData {
     elementos_no_copiables: string[];
     aplicacion_inmediata: string;
   };
-  // Legacy format support
-  etapa_consciencia?: {
-    nivel: number;
-    nombre: string;
-    descripcion: string;
-  };
-  comunicador?: {
-    personaje_dominante: string;
-    caracteristicas: string[];
-  };
-  receptor?: {
-    personaje_objetivo: string;
-    estrategia: string;
-  };
-  estructura?: {
-    hook?: string | object;
-    cuerpo?: string | object;
-    cta?: string | object;
-  };
+  // Legacy support
+  etapa_consciencia?: { nivel: number; nombre: string; descripcion: string; };
   recomendaciones?: string[];
 }
 
 interface AnalysisDisplayProps {
   analysis: AnalysisData | null;
 }
-
-const personajeNames: Record<string, string> = {
-  'P1': 'Analítico',
-  'P2': 'Protector',
-  'P3': 'Experiencial',
-  'P4': 'Sabio',
-};
 
 const personajeColors: Record<string, string> = {
   'P1': 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30',
@@ -88,129 +88,104 @@ const personajeColors: Record<string, string> = {
   'P4': 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
 };
 
+const personajeNames: Record<string, string> = {
+  'P1': 'Analítico',
+  'P2': 'Protector', 
+  'P3': 'Experiencial',
+  'P4': 'Sabio',
+};
+
 const nivelColors: Record<string, string> = {
   'UNAWARE': 'bg-gray-500',
-  'PROBLEM AWARE': 'bg-red-500',
+  'PROBLEM AWARE': 'bg-orange-500',
   'SOLUTION AWARE': 'bg-yellow-500',
   'PRODUCT AWARE': 'bg-blue-500',
   'MOST AWARE': 'bg-green-500',
 };
 
-const nivelOrder = ['UNAWARE', 'PROBLEM AWARE', 'SOLUTION AWARE', 'PRODUCT AWARE', 'MOST AWARE'];
+const getPersonajeColor = (personaje: string) => {
+  // Handle combined personajes like "P3+P1" or sequences like "P4→P2→P4→P1"
+  const firstP = personaje.match(/P[1-4]/)?.[0];
+  return personajeColors[firstP || 'P1'] || 'bg-muted text-muted-foreground border-muted';
+};
 
-const renderPersonajeBadge = (personaje: string, role: 'creador' | 'receptor') => {
-  const name = personajeNames[personaje] || personaje;
-  const colorClass = personajeColors[personaje] || 'bg-muted text-muted-foreground border-muted';
+const renderPersonajeBadge = (personaje: string, nombre?: string) => {
+  const colorClass = getPersonajeColor(personaje);
+  const displayName = nombre || personajeNames[personaje] || personaje;
   
   return (
-    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border ${colorClass}`}>
-      {role === 'creador' ? <User className="h-3 w-3" /> : <Users className="h-3 w-3" />}
-      <span className="font-bold">{personaje}</span>
-      <span className="opacity-75">({name})</span>
-    </div>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold border ${colorClass}`}>
+      {personaje}
+      {nombre && <span className="opacity-75">({displayName})</span>}
+    </span>
   );
 };
 
-const SectionCard = ({ 
-  section, 
-  title, 
-  emoji 
-}: { 
-  section: SectionAnalysis | undefined; 
-  title: string; 
-  emoji: string;
-}) => {
-  if (!section) return null;
+const PersonalidadesTable = ({ personalidades }: { personalidades: Personalidad[] }) => (
+  <div className="overflow-x-auto">
+    <table className="w-full text-sm border border-border rounded-lg overflow-hidden">
+      <thead className="bg-muted/50">
+        <tr>
+          <th className="text-left py-2 px-3 font-medium text-muted-foreground w-24">Rol</th>
+          <th className="text-left py-2 px-3 font-medium text-muted-foreground w-32">Personaje</th>
+          <th className="text-left py-2 px-3 font-medium text-muted-foreground">Justificación específica</th>
+        </tr>
+      </thead>
+      <tbody>
+        {personalidades.map((p, i) => (
+          <tr key={i} className="border-t border-border/50">
+            <td className="py-2 px-3">
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                {p.rol === 'Creador' ? <User className="h-3.5 w-3.5" /> : <Users className="h-3.5 w-3.5" />}
+                {p.rol}
+              </span>
+            </td>
+            <td className="py-2 px-3">
+              {renderPersonajeBadge(p.personaje, p.nombre)}
+            </td>
+            <td className="py-2 px-3 text-muted-foreground">
+              {p.justificacion}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
 
-  return (
-    <AccordionItem value={title.toLowerCase()}>
-      <AccordionTrigger className="text-sm font-medium hover:no-underline">
-        <span className="flex items-center gap-2">
-          <span>{emoji}</span>
-          <span>{title}</span>
-        </span>
-      </AccordionTrigger>
-      <AccordionContent className="space-y-4 pt-2">
-        {/* Transcripción / Estructura */}
-        {(section.transcripcion_exacta || section.estructura_identificada) && (
-          <div className="p-3 rounded-lg bg-muted/50 border border-border">
-            <p className="text-sm italic text-foreground">
-              "{section.transcripcion_exacta || section.estructura_identificada}"
-            </p>
-          </div>
-        )}
-
-        {/* Tabla de Personajes */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="text-left py-2 px-3 font-medium text-muted-foreground">Rol</th>
-                <th className="text-left py-2 px-3 font-medium text-muted-foreground">Personaje</th>
-                <th className="text-left py-2 px-3 font-medium text-muted-foreground">Justificación</th>
-              </tr>
-            </thead>
-            <tbody>
-              {section.creador_personaje && (
-                <tr className="border-b border-border/50">
-                  <td className="py-2 px-3">
-                    <span className="flex items-center gap-1.5 text-muted-foreground">
-                      <User className="h-3.5 w-3.5" />
-                      Creador
-                    </span>
-                  </td>
-                  <td className="py-2 px-3">
-                    {renderPersonajeBadge(section.creador_personaje, 'creador')}
-                  </td>
-                  <td className="py-2 px-3 text-muted-foreground">
-                    {section.creador_justificacion}
-                  </td>
-                </tr>
-              )}
-              {section.receptor_personaje && (
-                <tr>
-                  <td className="py-2 px-3">
-                    <span className="flex items-center gap-1.5 text-muted-foreground">
-                      <Users className="h-3.5 w-3.5" />
-                      Receptor
-                    </span>
-                  </td>
-                  <td className="py-2 px-3">
-                    {renderPersonajeBadge(section.receptor_personaje, 'receptor')}
-                  </td>
-                  <td className="py-2 px-3 text-muted-foreground">
-                    {section.receptor_justificacion}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+const TransicionesSection = ({ transiciones }: { transiciones: Transicion[] }) => (
+  <div className="space-y-3">
+    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+      Transiciones detalladas:
+    </p>
+    {transiciones.map((t, i) => (
+      <div key={i} className="p-3 rounded-lg bg-muted/30 border border-border space-y-2">
+        <div className="flex items-start gap-2">
+          <Quote className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+          <p className="text-sm italic">"{t.cita}"</p>
         </div>
-
-        {/* Información adicional */}
-        {section.mecanismo_retencion && (
-          <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
-            <p className="text-xs font-medium text-primary mb-1">Mecanismo de retención:</p>
-            <p className="text-sm text-foreground">{section.mecanismo_retencion}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+          <div className="flex items-start gap-2 p-2 bg-background rounded">
+            <User className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
+            <div>
+              <span className="font-medium">Creador: </span>
+              {renderPersonajeBadge(t.creador_p)}
+              <p className="text-muted-foreground mt-1">{t.creador_porque}</p>
+            </div>
           </div>
-        )}
-
-        {section.transiciones && section.transiciones !== 'Sin transiciones' && (
-          <div className="p-3 rounded-lg bg-accent/50 border border-accent">
-            <p className="text-xs font-medium text-muted-foreground mb-1">Transiciones:</p>
-            <p className="text-sm text-foreground">{section.transiciones}</p>
+          <div className="flex items-start gap-2 p-2 bg-background rounded">
+            <Users className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
+            <div>
+              <span className="font-medium">Receptor: </span>
+              {renderPersonajeBadge(t.receptor_p)}
+              <p className="text-muted-foreground mt-1">{t.receptor_porque}</p>
+            </div>
           </div>
-        )}
-
-        {section.tipo_cta && (
-          <Badge variant="outline" className="mt-2">
-            Tipo: {section.tipo_cta}
-          </Badge>
-        )}
-      </AccordionContent>
-    </AccordionItem>
-  );
-};
+        </div>
+      </div>
+    ))}
+  </div>
+);
 
 export default function AnalysisDisplay({ analysis }: AnalysisDisplayProps) {
   const [copiedFormula, setCopiedFormula] = useState(false);
@@ -227,8 +202,7 @@ export default function AnalysisDisplay({ analysis }: AnalysisDisplayProps) {
     );
   }
 
-  // Check if it's the new format
-  const isNewFormat = analysis.nivel_consciencia || analysis.hook || analysis.secuencia_personajes;
+  const isNewFormat = analysis.nivel_consciencia || analysis.hook?.personalidades;
 
   const copyFormula = () => {
     if (analysis.formula_replicable?.patron_una_linea) {
@@ -238,38 +212,29 @@ export default function AnalysisDisplay({ analysis }: AnalysisDisplayProps) {
     }
   };
 
-  // Legacy format support
+  // Legacy format
   if (!isNewFormat) {
     return (
       <div className="space-y-4">
         {analysis.etapa_consciencia && (
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Brain className="h-4 w-4" />
-                Etapa de Consciencia
-              </CardTitle>
+              <CardTitle className="text-base">Etapa de Consciencia</CardTitle>
             </CardHeader>
             <CardContent>
               <Badge variant="secondary">
                 Nivel {analysis.etapa_consciencia.nivel}: {analysis.etapa_consciencia.nombre}
               </Badge>
-              <p className="text-sm text-muted-foreground mt-2">
-                {analysis.etapa_consciencia.descripcion}
-              </p>
+              <p className="text-sm text-muted-foreground mt-2">{analysis.etapa_consciencia.descripcion}</p>
             </CardContent>
           </Card>
         )}
         {analysis.recomendaciones && (
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Recomendaciones</CardTitle>
-            </CardHeader>
+            <CardHeader className="pb-3"><CardTitle className="text-base">Recomendaciones</CardTitle></CardHeader>
             <CardContent>
               <ul className="text-sm space-y-2">
-                {analysis.recomendaciones.map((rec, i) => (
-                  <li key={i}>• {rec}</li>
-                ))}
+                {analysis.recomendaciones.map((rec, i) => <li key={i}>• {rec}</li>)}
               </ul>
             </CardContent>
           </Card>
@@ -278,25 +243,24 @@ export default function AnalysisDisplay({ analysis }: AnalysisDisplayProps) {
     );
   }
 
-  // New format
   return (
     <div className="space-y-4">
-      {/* Metadata */}
+      {/* 1. METADATA */}
       {analysis.metadata && (
-        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-          {analysis.metadata.creador && analysis.metadata.creador !== 'Desconocido' && (
+        <div className="flex flex-wrap gap-2 text-xs">
+          {analysis.metadata.creador && analysis.metadata.creador !== 'No identificado' && (
             <Badge variant="outline">👤 {analysis.metadata.creador}</Badge>
           )}
-          {analysis.metadata.plataforma && analysis.metadata.plataforma !== 'Desconocida' && (
+          {analysis.metadata.plataforma && (
             <Badge variant="outline">📱 {analysis.metadata.plataforma}</Badge>
           )}
-          {analysis.metadata.duracion_aproximada && analysis.metadata.duracion_aproximada !== 'No especificada' && (
+          {analysis.metadata.duracion_aproximada && (
             <Badge variant="outline">⏱️ {analysis.metadata.duracion_aproximada}</Badge>
           )}
         </div>
       )}
 
-      {/* Nivel de Consciencia */}
+      {/* 2. NIVEL DE CONSCIENCIA */}
       {analysis.nivel_consciencia && (
         <Card>
           <CardHeader className="pb-3">
@@ -305,112 +269,194 @@ export default function AnalysisDisplay({ analysis }: AnalysisDisplayProps) {
               Nivel de Consciencia Target
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4 mb-3">
-              <div className="flex gap-1">
-                {nivelOrder.map((nivel) => (
-                  <div
-                    key={nivel}
-                    className={`h-3 w-8 rounded ${
-                      nivelOrder.indexOf(nivel) <= nivelOrder.indexOf(analysis.nivel_consciencia!.nivel)
-                        ? nivelColors[nivel]
-                        : 'bg-muted'
-                    }`}
-                    title={nivel}
-                  />
-                ))}
-              </div>
-              <Badge variant="secondary" className="font-medium">
+          <CardContent className="space-y-3">
+            <div className="flex items-center gap-3">
+              <Badge 
+                variant="secondary" 
+                className={`${nivelColors[analysis.nivel_consciencia.nivel.split(' → ')[0]] || 'bg-muted'} text-white border-0`}
+              >
                 {analysis.nivel_consciencia.nivel}
               </Badge>
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               {analysis.nivel_consciencia.justificacion}
             </p>
           </CardContent>
         </Card>
       )}
 
-      {/* Análisis de Secciones */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Brain className="h-4 w-4" />
-            Análisis de Estructura
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Accordion type="single" collapsible className="w-full">
-            <SectionCard section={analysis.hook} title="Hook" emoji="🎣" />
-            <SectionCard section={analysis.body} title="Body" emoji="📝" />
-            <SectionCard section={analysis.cta} title="Call to Action" emoji="🎯" />
-          </Accordion>
-        </CardContent>
-      </Card>
+      {/* 3. ANÁLISIS DEL HOOK */}
+      {analysis.hook && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              🎣 Análisis del Hook
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {analysis.hook.transcripcion_exacta && (
+              <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                <p className="text-xs font-medium text-muted-foreground mb-1">Transcripción exacta:</p>
+                <p className="text-sm italic">"{analysis.hook.transcripcion_exacta}"</p>
+              </div>
+            )}
+            
+            {analysis.hook.personalidades && (
+              <>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Personalidades activas:
+                </p>
+                <PersonalidadesTable personalidades={analysis.hook.personalidades} />
+              </>
+            )}
 
-      {/* Secuencia de Personajes */}
+            {analysis.hook.mecanismo_retencion && analysis.hook.mecanismo_retencion.length > 0 && (
+              <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+                <p className="text-xs font-semibold text-primary mb-2">Mecanismo de retención:</p>
+                <ul className="text-sm space-y-1">
+                  {analysis.hook.mecanismo_retencion.map((m, i) => (
+                    <li key={i} className="flex gap-2">
+                      <Zap className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                      <span>{m}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 4. ANÁLISIS DEL BODY */}
+      {analysis.body && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              📝 Análisis del Body
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {analysis.body.estructura_identificada && (
+              <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                <p className="text-xs font-medium text-muted-foreground mb-1">Estructura identificada:</p>
+                <p className="text-sm font-mono">{analysis.body.estructura_identificada}</p>
+              </div>
+            )}
+            
+            {analysis.body.personalidades && (
+              <>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Personalidades activas:
+                </p>
+                <PersonalidadesTable personalidades={analysis.body.personalidades} />
+              </>
+            )}
+
+            {analysis.body.transiciones && analysis.body.transiciones.length > 0 && (
+              <TransicionesSection transiciones={analysis.body.transiciones} />
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 5. ANÁLISIS DEL CTA */}
+      {analysis.cta && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              🎯 Análisis del CTA
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {analysis.cta.transcripcion_exacta && (
+              <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                <p className="text-xs font-medium text-muted-foreground mb-1">Transcripción exacta:</p>
+                <p className="text-sm italic">"{analysis.cta.transcripcion_exacta}"</p>
+              </div>
+            )}
+            
+            {analysis.cta.personalidades && (
+              <>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Personalidades activas:
+                </p>
+                <PersonalidadesTable personalidades={analysis.cta.personalidades} />
+              </>
+            )}
+
+            {analysis.cta.tipo_cta && (
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="font-medium">
+                  Tipo: {analysis.cta.tipo_cta}
+                </Badge>
+              </div>
+            )}
+
+            {analysis.cta.descripcion_cta && (
+              <p className="text-sm text-muted-foreground">{analysis.cta.descripcion_cta}</p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 6. SECUENCIA DE PERSONAJES */}
       {analysis.secuencia_personajes && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Repeat className="h-4 w-4" />
-              Secuencia de Personajes
+              Secuencia Completa de Personajes
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-medium text-muted-foreground w-20">CREADOR:</span>
-              <code className="text-sm bg-muted px-2 py-1 rounded font-mono">
-                {analysis.secuencia_personajes.creador}
-              </code>
+            <div className="p-3 rounded-lg bg-muted/30 font-mono text-sm space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-muted-foreground w-24">CREADOR:</span>
+                <code className="bg-background px-2 py-1 rounded">{analysis.secuencia_personajes.creador}</code>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-muted-foreground w-24">RECEPTOR:</span>
+                <code className="bg-background px-2 py-1 rounded">{analysis.secuencia_personajes.receptor}</code>
+              </div>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-medium text-muted-foreground w-20">RECEPTOR:</span>
-              <code className="text-sm bg-muted px-2 py-1 rounded font-mono">
-                {analysis.secuencia_personajes.receptor}
-              </code>
-            </div>
+            {analysis.secuencia_personajes.patron_dominante && (
+              <div className="p-2 rounded bg-accent/50 text-sm">
+                <span className="font-medium">Patrón dominante: </span>
+                {analysis.secuencia_personajes.patron_dominante}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
 
-      {/* Fórmula Replicable */}
+      {/* 7. FÓRMULA REPLICABLE */}
       {analysis.formula_replicable && (
         <Card className="border-primary/30 bg-primary/5">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" />
-              Fórmula Replicable
+              Fórmula Estructural Replicable
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="p-3 rounded-lg bg-background border border-border">
-              <p className="text-xs font-medium text-muted-foreground mb-2">Template:</p>
-              <p className="text-sm font-mono">{analysis.formula_replicable.template}</p>
+              <p className="text-xs font-medium text-muted-foreground mb-2">Template abstracto:</p>
+              <p className="text-sm font-mono whitespace-pre-wrap">{analysis.formula_replicable.template}</p>
             </div>
-            <div className="p-3 rounded-lg bg-background border border-primary/30">
+            <div className="p-3 rounded-lg bg-background border-2 border-primary/30">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-medium text-primary">Patrón en una línea:</p>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-6 px-2"
-                  onClick={copyFormula}
-                >
-                  {copiedFormula ? (
-                    <Check className="h-3 w-3 text-green-500" />
-                  ) : (
-                    <Copy className="h-3 w-3" />
-                  )}
+                <p className="text-xs font-semibold text-primary">Patrón en una línea:</p>
+                <Button variant="ghost" size="sm" className="h-6 px-2" onClick={copyFormula}>
+                  {copiedFormula ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
                 </Button>
               </div>
-              <p className="text-sm font-medium">{analysis.formula_replicable.patron_una_linea}</p>
+              <p className="text-sm font-medium leading-relaxed">{analysis.formula_replicable.patron_una_linea}</p>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Síntesis Final */}
+      {/* 8. SÍNTESIS FINAL */}
       {analysis.sintesis && (
         <Card>
           <CardHeader className="pb-3">
@@ -420,47 +466,46 @@ export default function AnalysisDisplay({ analysis }: AnalysisDisplayProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Elementos Replicables */}
             {analysis.sintesis.elementos_replicables?.length > 0 && (
               <div>
-                <p className="text-xs font-medium text-green-600 dark:text-green-400 mb-2">
-                  ✓ ELEMENTOS REPLICABLES
+                <p className="text-xs font-semibold text-green-600 dark:text-green-400 mb-2 uppercase tracking-wide">
+                  ✓ {analysis.sintesis.elementos_replicables.length} Elementos Replicables
                 </p>
-                <ul className="text-sm space-y-1">
+                <ol className="text-sm space-y-2 list-decimal list-inside">
                   {analysis.sintesis.elementos_replicables.map((elem, i) => (
-                    <li key={i} className="flex gap-2">
-                      <span className="text-green-500">•</span>
-                      <span>{elem}</span>
+                    <li key={i} className="text-foreground">
+                      <span className="text-muted-foreground">{elem}</span>
                     </li>
                   ))}
-                </ul>
+                </ol>
               </div>
             )}
 
-            {/* Elementos No Copiables */}
+            <Separator />
+
             {analysis.sintesis.elementos_no_copiables?.length > 0 && (
               <div>
-                <p className="text-xs font-medium text-red-600 dark:text-red-400 mb-2">
-                  ✗ ELEMENTOS NO COPIABLES
+                <p className="text-xs font-semibold text-red-600 dark:text-red-400 mb-2 uppercase tracking-wide">
+                  ✗ {analysis.sintesis.elementos_no_copiables.length} Elementos No Copiables
                 </p>
-                <ul className="text-sm space-y-1">
+                <ol className="text-sm space-y-2 list-decimal list-inside">
                   {analysis.sintesis.elementos_no_copiables.map((elem, i) => (
-                    <li key={i} className="flex gap-2">
-                      <span className="text-red-500">•</span>
-                      <span>{elem}</span>
+                    <li key={i} className="text-foreground">
+                      <span className="text-muted-foreground">{elem}</span>
                     </li>
                   ))}
-                </ul>
+                </ol>
               </div>
             )}
 
-            {/* Aplicación Inmediata */}
+            <Separator />
+
             {analysis.sintesis.aplicacion_inmediata && (
-              <div className="p-3 rounded-lg bg-accent/50 border border-accent">
-                <p className="text-xs font-medium text-muted-foreground mb-1">
-                  🚀 APLICACIÓN INMEDIATA
+              <div className="p-4 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
+                <p className="text-xs font-semibold text-primary mb-2 uppercase tracking-wide">
+                  🚀 Aplicación Inmediata
                 </p>
-                <p className="text-sm font-medium">{analysis.sintesis.aplicacion_inmediata}</p>
+                <p className="text-sm font-medium leading-relaxed">{analysis.sintesis.aplicacion_inmediata}</p>
               </div>
             )}
           </CardContent>
