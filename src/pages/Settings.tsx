@@ -159,16 +159,7 @@ export default function Settings() {
   };
 
   const handleProviderChange = async (provider: AnalysisProvider) => {
-    // Check if the required API key is configured for the selected provider
-    if (provider === 'gemini' && !isKeyConfigured('GEMINI_API_KEY')) {
-      toast.error('Primero configura tu API key de Gemini');
-      return;
-    }
-    if (provider === 'claude' && !isKeyConfigured('CLAUDE_API_KEY')) {
-      toast.error('Primero configura tu API key de Claude');
-      return;
-    }
-
+    // Allow selection - we'll show the API key form regardless
     setSavingProvider(true);
     try {
       const existingKey = apiKeys.find(k => k.key_name === 'ANALYSIS_PROVIDER');
@@ -323,59 +314,105 @@ export default function Settings() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <RadioGroup 
-              value={analysisProvider} 
-              onValueChange={(value) => handleProviderChange(value as AnalysisProvider)}
-              className="space-y-3"
-              disabled={savingProvider}
-            >
-              <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
-                <RadioGroupItem value="gemini" id="gemini" />
-                <Label htmlFor="gemini" className="flex-1 cursor-pointer">
-                  <div className="flex items-center gap-2">
+            {/* API Keys - Always show both */}
+            <div className="space-y-4">
+              {/* Gemini Card */}
+              <div 
+                className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${
+                  analysisProvider === 'gemini' 
+                    ? 'border-primary bg-primary/5' 
+                    : 'border-border hover:border-muted-foreground/50'
+                }`}
+                onClick={() => setAnalysisProvider('gemini')}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                      analysisProvider === 'gemini' ? 'border-primary' : 'border-muted-foreground'
+                    }`}>
+                      {analysisProvider === 'gemini' && (
+                        <div className="w-2 h-2 rounded-full bg-primary" />
+                      )}
+                    </div>
                     <span className="font-medium">Google Gemini</span>
                     {isKeyConfigured('GEMINI_API_KEY') && (
                       <span className="text-xs bg-green-500/20 text-green-500 px-2 py-0.5 rounded-full">
-                        API Key configurada
+                        Configurada
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Usa tu propia API key de Google AI Studio.
-                  </p>
-                </Label>
+                  {analysisProvider === 'gemini' && (
+                    <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
+                      Activo
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mb-3 ml-7">
+                  Usa tu propia API key de Google AI Studio.
+                </p>
+                <div className="ml-7" onClick={(e) => e.stopPropagation()}>
+                  {renderApiKeyInput('GEMINI_API_KEY', 'API Key de Gemini', 'aistudio.google.com/app/apikey')}
+                </div>
               </div>
 
-              <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
-                <RadioGroupItem value="claude" id="claude" />
-                <Label htmlFor="claude" className="flex-1 cursor-pointer">
-                  <div className="flex items-center gap-2">
+              {/* Claude Card */}
+              <div 
+                className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${
+                  analysisProvider === 'claude' 
+                    ? 'border-primary bg-primary/5' 
+                    : 'border-border hover:border-muted-foreground/50'
+                }`}
+                onClick={() => setAnalysisProvider('claude')}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                      analysisProvider === 'claude' ? 'border-primary' : 'border-muted-foreground'
+                    }`}>
+                      {analysisProvider === 'claude' && (
+                        <div className="w-2 h-2 rounded-full bg-primary" />
+                      )}
+                    </div>
                     <span className="font-medium">Anthropic Claude</span>
                     {isKeyConfigured('CLAUDE_API_KEY') && (
                       <span className="text-xs bg-green-500/20 text-green-500 px-2 py-0.5 rounded-full">
-                        API Key configurada
+                        Configurada
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Usa tu propia API key de Anthropic.
-                  </p>
-                </Label>
+                  {analysisProvider === 'claude' && (
+                    <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
+                      Activo
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mb-3 ml-7">
+                  Usa tu propia API key de Anthropic.
+                </p>
+                <div className="ml-7" onClick={(e) => e.stopPropagation()}>
+                  {renderApiKeyInput('CLAUDE_API_KEY', 'API Key de Claude', 'console.anthropic.com/settings/keys')}
+                </div>
               </div>
-            </RadioGroup>
-
-            {/* API Keys for selected provider */}
-            <div className="pt-4 border-t border-border">
-              <h4 className="text-sm font-medium text-foreground mb-4">
-                Configurar API Key
-              </h4>
-              {analysisProvider === 'gemini' && 
-                renderApiKeyInput('GEMINI_API_KEY', 'Google Gemini API Key', 'Obtén tu key en Google AI Studio')
-              }
-              {analysisProvider === 'claude' && 
-                renderApiKeyInput('CLAUDE_API_KEY', 'Anthropic Claude API Key', 'Obtén tu key en console.anthropic.com')
-              }
             </div>
+
+            {/* Save provider button */}
+            <Button 
+              onClick={() => handleProviderChange(analysisProvider)}
+              disabled={savingProvider || (analysisProvider === 'gemini' && !isKeyConfigured('GEMINI_API_KEY')) || (analysisProvider === 'claude' && !isKeyConfigured('CLAUDE_API_KEY'))}
+              className="w-full"
+            >
+              {savingProvider ? (
+                <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+              ) : null}
+              Guardar proveedor seleccionado
+            </Button>
+            
+            {((analysisProvider === 'gemini' && !isKeyConfigured('GEMINI_API_KEY')) || 
+              (analysisProvider === 'claude' && !isKeyConfigured('CLAUDE_API_KEY'))) && (
+              <p className="text-xs text-muted-foreground text-center">
+                Primero configura la API key del proveedor seleccionado
+              </p>
+            )}
           </CardContent>
         </Card>
 
