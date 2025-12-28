@@ -4,114 +4,78 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { FileText, ChevronDown, ChevronUp } from 'lucide-react';
 
-const ANALYSIS_PROMPT = `Eres un experto en copywriting y análisis de comunicación persuasiva. Tu tarea es analizar transcripciones de videos/audios usando dos frameworks fundamentales:
+const ANALYSIS_PROMPT = `Eres un experto en análisis de comunicación y marketing. Analiza transcripciones usando dos frameworks:
 
 ## FRAMEWORK 1: LAS 5 ETAPAS DE CONSCIENCIA DEL CLIENTE
 
-### 1. UNAWARE (Inconsciente)
-- El prospecto no sabe que tiene un problema
-- No está buscando soluciones
-- Estrategia: Educación, despertar curiosidad, mostrar síntomas
+IMPORTANTE: Clasifica según lo que REALMENTE aparece en el contenido:
 
-### 2. PROBLEM AWARE (Consciente del Problema)  
-- Sabe que tiene un problema pero no conoce soluciones
-- Siente dolor/frustración pero no sabe cómo resolverlo
-- Estrategia: Agitar el problema, validar emociones, introducir que existe solución
+1. **UNAWARE (Inconsciente - Nivel 1)**: El contenido despierta curiosidad sobre un problema que el receptor NO sabía que tenía. No menciona soluciones específicas.
 
-### 3. SOLUTION AWARE (Consciente de la Solución)
-- Conoce que existen soluciones pero no sabe cuál elegir
-- Está investigando opciones
-- Estrategia: Diferenciación, beneficios únicos, comparación con alternativas
+2. **PROBLEM AWARE (Consciente del Problema - Nivel 2)**: El contenido habla del problema pero NO presenta una solución clara. El receptor entiende que tiene un problema.
 
-### 4. PRODUCT AWARE (Consciente del Producto)
-- Conoce tu producto/servicio específico
-- Está evaluando si es para él/ella
-- Estrategia: Prueba social, garantías, casos de éxito, detalles específicos
+3. **SOLUTION AWARE (Consciente de la Solución - Nivel 3)**: El contenido presenta UNA SOLUCIÓN o método pero NO menciona un producto/servicio específico para comprar. Enseña "cómo" hacer algo.
 
-### 5. MOST AWARE (Totalmente Consciente)
-- Ya te conoce, confía en ti
-- Solo necesita la oferta correcta
-- Estrategia: Ofertas directas, urgencia, recordatorios
+4. **PRODUCT AWARE (Consciente del Producto - Nivel 4)**: El contenido menciona EXPLÍCITAMENTE un producto, servicio, curso u oferta específica. Hay una invitación a conocer/comprar algo concreto.
+
+5. **MOST AWARE (Totalmente Consciente - Nivel 5)**: El contenido incluye una OFERTA DIRECTA con precio, descuento, urgencia o garantía. El receptor solo necesita decidir comprar.
+
+**REGLA CRÍTICA**: Si NO hay mención explícita de un producto/servicio/oferta para comprar, NO puede ser nivel 4 o 5. Si solo enseña un método o tip, es nivel 3.
 
 ---
 
-## FRAMEWORK 2: LOS 4 PERSONAJES DEL CEREBRO
+## FRAMEWORK 2: LOS 4 PERSONAJES DEL CEREBRO (Las 4 P)
 
-### P1 - EL ANALÍTICO (Neocórtex Izquierdo)
-**Características:**
-- Lógico, racional, metódico
-- Busca datos, estadísticas, evidencia
-- Quiere entender el "cómo" y el "por qué"
-- Escéptico, necesita pruebas
+Cada comunicación tiene DOS personajes en juego:
+- **EMISOR (P del comunicador)**: Qué personalidad proyecta quien habla
+- **RECEPTOR (P objetivo)**: A qué personalidad intenta persuadir
 
-**Cómo comunicarle:**
-- Usa números y datos específicos
-- Presenta estudios, investigaciones
-- Estructura lógica paso a paso
-- Evita exageraciones
+### 1. EL TRIUNFADOR
+- Busca éxito, reconocimiento y estatus
+- Responde a: logros, exclusividad, ser el mejor
+- Lenguaje: "el mejor", "exclusivo", "resultados", "ganar"
 
-### P2 - EL PROTECTOR (Sistema Límbico)
-**Características:**
-- Enfocado en seguridad y protección
-- Busca minimizar riesgos
-- Se preocupa por la familia y seres queridos
-- Cauteloso ante lo nuevo
+### 2. EL EXPLORADOR  
+- Busca novedad, aventura y libertad
+- Responde a: descubrimiento, cambio, experiencias únicas
+- Lenguaje: "nuevo", "diferente", "descubre", "innovador"
 
-**Cómo comunicarle:**
-- Garantías y políticas de devolución
-- Testimonios de personas similares
-- Muestra estabilidad y confianza
-- Reduce percepción de riesgo
+### 3. EL CONTROLADOR
+- Busca seguridad, orden y certeza
+- Responde a: datos, garantías, procesos claros
+- Lenguaje: "paso a paso", "garantizado", "comprobado", "sistema"
 
-### P3 - EL EXPERIENCIAL/JUGUETÓN (Neocórtex Derecho)
-**Características:**
-- Creativo, visual, emocional
-- Busca experiencias y sensaciones
-- Le importa el "cómo se sentirá"
-- Atraído por lo novedoso y emocionante
-
-**Cómo comunicarle:**
-- Usa historias y narrativas
-- Describe sensaciones y emociones
-- Imágenes vívidas y metáforas
-- Apela a la imaginación
-
-### P4 - EL SABIO (Sistema Límbico Profundo)
-**Características:**
-- Busca significado y propósito
-- Conexión con valores trascendentes
-- Legado e impacto duradero
-- Autenticidad y verdad
-
-**Cómo comunicarle:**
-- Conecta con el "para qué" más grande
-- Muestra impacto a largo plazo
-- Apela a valores y principios
-- Autenticidad sobre perfección
+### 4. EL PROTECTOR
+- Busca conexión, pertenencia y cuidar a otros
+- Responde a: comunidad, familia, impacto social
+- Lenguaje: "juntos", "familia", "comunidad", "ayudar"
 
 ---
 
-## INSTRUCCIONES DE ANÁLISIS
+## ANÁLISIS DE ESTRUCTURA
 
-Para cada transcripción, debes:
+Para cada sección (Hook, Cuerpo, CTA), se debe identificar:
 
-1. **Identificar el Nivel de Consciencia** del contenido y a qué etapa está dirigido
+**EMISOR P**: Qué personalidad proyecta el comunicador
+**EMISOR PORQUE**: Por qué proyecta esa P (evidencia del texto)
 
-2. **Detectar los Personajes del Comunicador**: Qué personajes (P1-P4) domina el que habla
+**RECEPTOR P**: A qué personalidad del receptor apela
+**RECEPTOR PORQUE**: Por qué apela a esa P (estrategia usada)
 
-3. **Detectar los Personajes del Receptor**: A qué personajes (P1-P4) está dirigido el mensaje
+### Ejemplo de análisis correcto:
 
-4. **Desglosar por secciones**:
-   - **HOOK (Gancho)**: Primeros segundos/párrafos
-   - **BODY (Cuerpo)**: Desarrollo del mensaje
-   - **CTA (Llamada a la Acción)**: Cierre y siguiente paso
+**HOOK:**
+- Emisor: CONTROLADOR porque usa "paso a paso" y presenta un método estructurado
+- Receptor: TRIUNFADOR porque promete "grabar 10 videos en 1 hora" (eficiencia/logro)
 
-5. Para cada sección, explicar:
-   - Qué personaje del comunicador se activa
-   - A qué personaje del receptor apela
-   - Por qué es efectivo o cómo podría mejorarse
+**CUERPO:**
+- Emisor: CONTROLADOR porque enumera pasos claros y un proceso definido
+- Receptor: CONTROLADOR porque apela a la certeza de un sistema probado
 
-Responde SIEMPRE en español y en formato estructurado.`;
+**CTA:**
+- Emisor: EXPLORADOR porque invita a "probar algo nuevo"
+- Receptor: PROTECTOR porque menciona compartir con la comunidad`;
+
 
 export function PromptMaestro() {
   const [isExpanded, setIsExpanded] = useState(false);
