@@ -40,6 +40,7 @@ export type Database = {
       }
       transcriptions: {
         Row: {
+          analysis: Json | null
           created_at: string
           duration_seconds: number | null
           id: string
@@ -52,6 +53,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          analysis?: Json | null
           created_at?: string
           duration_seconds?: number | null
           id?: string
@@ -64,6 +66,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          analysis?: Json | null
           created_at?: string
           duration_seconds?: number | null
           id?: string

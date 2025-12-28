@@ -12,6 +12,7 @@ export interface Transcription {
   transcript: string;
   language: string | null;
   duration_seconds: number | null;
+  analysis: any;
   created_at: string;
   updated_at: string;
 }
