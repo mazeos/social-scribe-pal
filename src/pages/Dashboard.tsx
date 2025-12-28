@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import TranscriptionModal from '@/components/TranscriptionModal';
 import TranscriptionDetail from '@/components/TranscriptionDetail';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { Transcription } from '@/hooks/useTranscriptions';
 
 const platformIcons: Record<string, React.ReactNode> = {
@@ -103,10 +104,11 @@ export default function Dashboard() {
             <span className="text-lg font-semibold">TranscribeAI</span>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             <span className="hidden text-sm text-muted-foreground sm:block">
               {user?.email}
             </span>
+            <ThemeToggle />
             <Button variant="ghost" size="icon" onClick={() => navigate('/settings')}>
               <Settings className="h-5 w-5" />
             </Button>
