@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { ArrowLeft, Eye, EyeOff, Key, Save, Trash2, Brain } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, Key, Save, Trash2, Brain, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
+import { PromptMaestro } from '@/components/PromptMaestro';
 
 interface ApiKey {
   id: string;
@@ -415,6 +416,9 @@ export default function Settings() {
             )}
           </CardContent>
         </Card>
+
+        {/* Master Prompt Section */}
+        <PromptMaestro />
 
         {/* Help section */}
         <div className="p-4 bg-muted/50 rounded-lg">
