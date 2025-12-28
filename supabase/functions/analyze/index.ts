@@ -5,79 +5,118 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const MASTER_PROMPT = `Eres un experto en análisis de comunicación y marketing. Analiza la siguiente transcripción utilizando dos frameworks principales:
+const MASTER_PROMPT = `# SISTEMA DE ANÁLISIS ESTRUCTURAL DE CONTENIDO VERBAL
 
-## FRAMEWORK 1: Las 5 Etapas de Consciencia del Cliente
+## ROL
 
-IMPORTANTE: Clasifica según lo que REALMENTE aparece en el contenido:
+Eres un analista de comunicación especializado en psicología de audiencias. Tu trabajo es deconstruir contenido viral para identificar los mecanismos psicológicos que lo hacen efectivo, permitiendo replicar la ESTRUCTURA sin copiar el contenido.
 
-1. **Inconsciente (Nivel 1)**: El contenido despierta curiosidad sobre un problema que el receptor NO sabía que tenía. No menciona soluciones específicas.
-2. **Consciente del Problema (Nivel 2)**: El contenido habla del problema pero NO presenta una solución clara. El receptor entiende que tiene un problema.
-3. **Consciente de la Solución (Nivel 3)**: El contenido presenta UNA SOLUCIÓN o método pero NO menciona un producto/servicio específico para comprar. Enseña "cómo" hacer algo.
-4. **Consciente del Producto (Nivel 4)**: El contenido menciona EXPLÍCITAMENTE un producto, servicio, curso o oferta específica. Hay una invitación a conocer/comprar algo concreto.
-5. **Totalmente Consciente (Nivel 5)**: El contenido incluye una OFERTA DIRECTA con precio, descuento, urgencia o garantía. El receptor solo necesita decidir comprar.
+---
 
-REGLA CRÍTICA: Si NO hay mención explícita de un producto/servicio/oferta para comprar, NO puede ser nivel 4 o 5. Si solo enseña un método o tip, es nivel 3 (Consciente de la Solución).
+## FRAMEWORKS DE ANÁLISIS
 
-## FRAMEWORK 2: Los 4 Personajes del Cerebro (Las 4 P)
+### FRAMEWORK 1: NIVELES DE CONSCIENCIA DEL ESPECTADOR
 
-Cada comunicación tiene DOS personajes en juego:
-- **EMISOR (P del comunicador)**: Qué personalidad proyecta quien habla
-- **RECEPTOR (P objetivo)**: A qué personalidad intenta persuadir
+| Nivel | Definición | Señales en el contenido |
+|-------|-----------|------------------------|
+| **UNAWARE** | No sabe que tiene un problema | Ataca un "enemigo común", genera indignación, revela algo oculto |
+| **PROBLEM AWARE** | Sabe el problema, no la solución | Describe el dolor en sus palabras, amplifica consecuencias, valida |
+| **SOLUTION AWARE** | Sabe que hay soluciones, compara | Analiza opciones, pros/contras, posiciona categoría de solución |
+| **PRODUCT AWARE** | Evalúa productos específicos | Casos de éxito, testimonios, demostraciones, ofertas |
+| **MOST AWARE** | Decidió, necesita empujón final | Rebate objeciones, urgencia, elimina fricción |
 
-1. **El Triunfador**: Busca éxito, reconocimiento y estatus. Responde a: logros, exclusividad, ser el mejor.
-2. **El Explorador**: Busca novedad, aventura y libertad. Responde a: descubrimiento, cambio, experiencias únicas.
-3. **El Controlador**: Busca seguridad, orden y certeza. Responde a: datos, garantías, procesos claros.
-4. **El Protector**: Busca conexión, pertenencia y cuidar a otros. Responde a: comunidad, familia, impacto social.
+### FRAMEWORK 2: LOS 4 PERSONAJES DEL CEREBRO
 
-## INSTRUCCIONES DE ANÁLISIS
+| Código | Nombre | Características | Activadores verbales |
+|--------|--------|-----------------|---------------------|
+| **P1** | Analítico | Lógico, datos, paso a paso, estructura | Números, listas, "funciona así", procesos, frameworks |
+| **P2** | Protector | Reactivo, dolor, miedo, injusticia, trauma | Amenazas, "lo que sale mal", validación de heridas, enemigos |
+| **P3** | Experiencial | Presente, juguetón, sorpresa, curiosidad | Wow, humor, novedad, cambios de ritmo, contradicciones |
+| **P4** | Sabio | Perspectiva amplia, significado, verdad profunda | Propósito, "la realidad es", paz, conexión, trascendencia |
 
-Analiza la transcripción y responde en formato JSON con esta estructura exacta:
+### REGLAS DE INTERACCIÓN
+
+- P1→P1: Transferencia de información estructurada
+- P2→P2: Tribu por dolor/enemigo compartido
+- P3→P3: Contagio emocional, viralidad por entretenimiento
+- P4→P4: Conexión profunda, "se siente verdadero"
+- P3/P4 activo inhibe P1/P2 del receptor (calma mente analítica y miedo)
+- P1/P2 activo inhibe P3/P4 del receptor (genera tensión, urgencia)
+
+---
+
+## INSTRUCCIONES
+
+Analiza la transcripción proporcionada y responde **ÚNICAMENTE con un JSON válido** (sin texto adicional antes o después) con esta estructura exacta:
+
 {
-  "etapa_consciencia": {
-    "nivel": [1-5],
-    "nombre": "[nombre de la etapa]",
-    "descripcion": "[explicación de por qué está en esta etapa, citando evidencia del texto]"
+  "metadata": {
+    "creador": "[nombre del creador si se conoce o 'Desconocido']",
+    "plataforma": "[TikTok/Reels/Shorts/Desconocida]",
+    "duracion_aproximada": "[X segundos o 'No especificada']"
   },
-  "comunicador": {
-    "personaje_dominante": "[Triunfador/Explorador/Controlador/Protector]",
-    "caracteristicas": ["característica 1", "característica 2", "característica 3"]
+  "nivel_consciencia": {
+    "nivel": "[UNAWARE / PROBLEM AWARE / SOLUTION AWARE / PRODUCT AWARE / MOST AWARE]",
+    "justificacion": "[Qué elementos específicos del texto revelan este nivel - cita frases exactas]"
   },
-  "receptor": {
-    "personaje_objetivo": "[Triunfador/Explorador/Controlador/Protector]",
-    "estrategia": "[cómo el mensaje intenta conectar con este personaje]"
+  "hook": {
+    "transcripcion_exacta": "[Primeras 1-2 oraciones exactas]",
+    "creador_personaje": "[P1/P2/P3/P4]",
+    "creador_justificacion": "[Qué palabras/tono revelan este personaje]",
+    "receptor_personaje": "[P1/P2/P3/P4]",
+    "receptor_justificacion": "[Qué personaje se activa en quien escucha y por qué]",
+    "mecanismo_retencion": "[¿Por qué alguien NO haría scroll? Sé específico]"
   },
-  "estructura": {
-    "hook": {
-      "texto_resumen": "[resumen del hook]",
-      "emisor_p": "[Triunfador/Explorador/Controlador/Protector]",
-      "emisor_porque": "[por qué el emisor proyecta esta P en el hook]",
-      "receptor_p": "[Triunfador/Explorador/Controlador/Protector]",
-      "receptor_porque": "[por qué apela a esta P del receptor]"
-    },
-    "cuerpo": {
-      "texto_resumen": "[resumen del cuerpo]",
-      "emisor_p": "[Triunfador/Explorador/Controlador/Protector]",
-      "emisor_porque": "[por qué el emisor proyecta esta P en el cuerpo]",
-      "receptor_p": "[Triunfador/Explorador/Controlador/Protector]",
-      "receptor_porque": "[por qué apela a esta P del receptor]"
-    },
-    "cta": {
-      "texto_resumen": "[resumen del CTA]",
-      "emisor_p": "[Triunfador/Explorador/Controlador/Protector]",
-      "emisor_porque": "[por qué el emisor proyecta esta P en el CTA]",
-      "receptor_p": "[Triunfador/Explorador/Controlador/Protector]",
-      "receptor_porque": "[por qué apela a esta P del receptor]"
-    }
+  "body": {
+    "estructura_identificada": "[Descripción de la estructura, no el contenido]",
+    "creador_personaje": "[P1/P2/P3/P4]",
+    "creador_justificacion": "[Qué palabras/tono revelan este personaje]",
+    "receptor_personaje": "[P1/P2/P3/P4]",
+    "receptor_justificacion": "[Qué personaje se activa en quien escucha y por qué]",
+    "transiciones": "[Si cambia de personaje durante el body, documenta dónde y por qué. Si no hay cambios, indica 'Sin transiciones']"
   },
-  "recomendaciones": [
-    "recomendación 1 para mejorar",
-    "recomendación 2 para mejorar",
-    "recomendación 3 para mejorar"
-  ]
+  "cta": {
+    "transcripcion_exacta": "[Cierre / llamada a la acción exacta]",
+    "creador_personaje": "[P1/P2/P3/P4]",
+    "creador_justificacion": "[Qué palabras/tono revelan este personaje]",
+    "receptor_personaje": "[P1/P2/P3/P4]",
+    "receptor_justificacion": "[Qué personaje se activa en quien escucha y por qué]",
+    "tipo_cta": "[Engagement / Follow / Conversión / Implícito / Ninguno]"
+  },
+  "secuencia_personajes": {
+    "creador": "Hook [P_] → Body [P_] → CTA [P_]",
+    "receptor": "Hook [P_] → Body [P_] → CTA [P_]"
+  },
+  "formula_replicable": {
+    "template": "[HOOK: tipo de apertura] → [BODY: tipo de desarrollo] → [CTA: tipo de cierre]",
+    "patron_una_linea": "[Fórmula sin contenido específico, aplicable a cualquier tema]"
+  },
+  "sintesis": {
+    "elementos_replicables": [
+      "[Elemento estructural 1 que puedes usar]",
+      "[Elemento estructural 2 que puedes usar]",
+      "[Elemento estructural 3 que puedes usar]"
+    ],
+    "elementos_no_copiables": [
+      "[Qué es único del creador/contexto]",
+      "[Qué depende de factores externos]"
+    ],
+    "aplicacion_inmediata": "[Una oración describiendo cómo usarías esta estructura para tu contenido]"
+  }
 }
 
-TRANSCRIPCIÓN A ANALIZAR:
+## NOTAS IMPORTANTES
+
+- Sé específico en justificaciones. No digas "activa P2" sin citar qué palabra o frase lo hace.
+- Distingue entre lo que el creador PROYECTA y lo que el receptor EXPERIMENTA.
+- El objetivo es extraer la ESTRUCTURA, no el contenido.
+- Si hay ambigüedad, indica las opciones posibles con su probabilidad.
+- Responde SOLO con el JSON, sin texto antes ni después.
+
+---
+
+## TRANSCRIPCIÓN A ANALIZAR:
+
 `;
 
 Deno.serve(async (req) => {
@@ -168,7 +207,7 @@ Deno.serve(async (req) => {
               temperature: 0.7,
               topP: 0.95,
               topK: 40,
-              maxOutputTokens: 2048,
+              maxOutputTokens: 4096,
             }
           })
         }
@@ -214,7 +253,7 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({
           model: "claude-3-haiku-20240307",
-          max_tokens: 2048,
+          max_tokens: 4096,
           messages: [{
             role: "user",
             content: MASTER_PROMPT + transcript
