@@ -9,13 +9,21 @@ const MASTER_PROMPT = `Eres un experto en análisis de comunicación y marketing
 
 ## FRAMEWORK 1: Las 5 Etapas de Consciencia del Cliente
 
-1. **Inconsciente (Nivel 1)**: No sabe que tiene un problema. Necesita contenido educativo que despierte curiosidad.
-2. **Consciente del Problema (Nivel 2)**: Sabe que tiene un problema pero no conoce soluciones. Busca entender mejor su situación.
-3. **Consciente de la Solución (Nivel 3)**: Conoce que existen soluciones pero no sabe cuál elegir. Compara opciones.
-4. **Consciente del Producto (Nivel 4)**: Conoce tu producto/servicio pero necesita más información para decidir.
-5. **Totalmente Consciente (Nivel 5)**: Listo para comprar, solo necesita el empujón final (oferta, urgencia, garantía).
+IMPORTANTE: Clasifica según lo que REALMENTE aparece en el contenido:
 
-## FRAMEWORK 2: Los 4 Personajes del Cerebro
+1. **Inconsciente (Nivel 1)**: El contenido despierta curiosidad sobre un problema que el receptor NO sabía que tenía. No menciona soluciones específicas.
+2. **Consciente del Problema (Nivel 2)**: El contenido habla del problema pero NO presenta una solución clara. El receptor entiende que tiene un problema.
+3. **Consciente de la Solución (Nivel 3)**: El contenido presenta UNA SOLUCIÓN o método pero NO menciona un producto/servicio específico para comprar. Enseña "cómo" hacer algo.
+4. **Consciente del Producto (Nivel 4)**: El contenido menciona EXPLÍCITAMENTE un producto, servicio, curso o oferta específica. Hay una invitación a conocer/comprar algo concreto.
+5. **Totalmente Consciente (Nivel 5)**: El contenido incluye una OFERTA DIRECTA con precio, descuento, urgencia o garantía. El receptor solo necesita decidir comprar.
+
+REGLA CRÍTICA: Si NO hay mención explícita de un producto/servicio/oferta para comprar, NO puede ser nivel 4 o 5. Si solo enseña un método o tip, es nivel 3 (Consciente de la Solución).
+
+## FRAMEWORK 2: Los 4 Personajes del Cerebro (Las 4 P)
+
+Cada comunicación tiene DOS personajes en juego:
+- **EMISOR (P del comunicador)**: Qué personalidad proyecta quien habla
+- **RECEPTOR (P objetivo)**: A qué personalidad intenta persuadir
 
 1. **El Triunfador**: Busca éxito, reconocimiento y estatus. Responde a: logros, exclusividad, ser el mejor.
 2. **El Explorador**: Busca novedad, aventura y libertad. Responde a: descubrimiento, cambio, experiencias únicas.
@@ -29,7 +37,7 @@ Analiza la transcripción y responde en formato JSON con esta estructura exacta:
   "etapa_consciencia": {
     "nivel": [1-5],
     "nombre": "[nombre de la etapa]",
-    "descripcion": "[breve explicación de por qué está en esta etapa]"
+    "descripcion": "[explicación de por qué está en esta etapa, citando evidencia del texto]"
   },
   "comunicador": {
     "personaje_dominante": "[Triunfador/Explorador/Controlador/Protector]",
@@ -40,9 +48,27 @@ Analiza la transcripción y responde en formato JSON con esta estructura exacta:
     "estrategia": "[cómo el mensaje intenta conectar con este personaje]"
   },
   "estructura": {
-    "hook": "[análisis del gancho inicial]",
-    "cuerpo": "[análisis del desarrollo del mensaje]",
-    "cta": "[análisis del llamado a la acción]"
+    "hook": {
+      "texto_resumen": "[resumen del hook]",
+      "emisor_p": "[Triunfador/Explorador/Controlador/Protector]",
+      "emisor_porque": "[por qué el emisor proyecta esta P en el hook]",
+      "receptor_p": "[Triunfador/Explorador/Controlador/Protector]",
+      "receptor_porque": "[por qué apela a esta P del receptor]"
+    },
+    "cuerpo": {
+      "texto_resumen": "[resumen del cuerpo]",
+      "emisor_p": "[Triunfador/Explorador/Controlador/Protector]",
+      "emisor_porque": "[por qué el emisor proyecta esta P en el cuerpo]",
+      "receptor_p": "[Triunfador/Explorador/Controlador/Protector]",
+      "receptor_porque": "[por qué apela a esta P del receptor]"
+    },
+    "cta": {
+      "texto_resumen": "[resumen del CTA]",
+      "emisor_p": "[Triunfador/Explorador/Controlador/Protector]",
+      "emisor_porque": "[por qué el emisor proyecta esta P en el CTA]",
+      "receptor_p": "[Triunfador/Explorador/Controlador/Protector]",
+      "receptor_porque": "[por qué apela a esta P del receptor]"
+    }
   },
   "recomendaciones": [
     "recomendación 1 para mejorar",

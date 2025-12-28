@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Brain, User, Users, Lightbulb, Heart, Shield, Zap
+import { Brain, User, Users, Lightbulb, Heart, Shield, Zap, MessageCircle
 } from 'lucide-react';
 import {
   Accordion,
@@ -8,6 +8,14 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+
+interface StructureSection {
+  texto_resumen?: string;
+  emisor_p?: string;
+  emisor_porque?: string;
+  receptor_p?: string;
+  receptor_porque?: string;
+}
 
 interface AnalysisData {
   etapa_consciencia?: {
@@ -24,9 +32,9 @@ interface AnalysisData {
     estrategia: string;
   };
   estructura?: {
-    hook?: string;
-    cuerpo?: string;
-    cta?: string;
+    hook?: string | StructureSection;
+    cuerpo?: string | StructureSection;
+    cta?: string | StructureSection;
   };
   recomendaciones?: string[];
 }
@@ -36,10 +44,17 @@ interface AnalysisDisplayProps {
 }
 
 const personajeIcons: Record<string, React.ReactNode> = {
-  'Triunfador': <Zap className="h-5 w-5" />,
-  'Explorador': <Lightbulb className="h-5 w-5" />,
-  'Controlador': <Shield className="h-5 w-5" />,
-  'Protector': <Heart className="h-5 w-5" />,
+  'Triunfador': <Zap className="h-4 w-4" />,
+  'Explorador': <Lightbulb className="h-4 w-4" />,
+  'Controlador': <Shield className="h-4 w-4" />,
+  'Protector': <Heart className="h-4 w-4" />,
+};
+
+const personajeColors: Record<string, string> = {
+  'Triunfador': 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400',
+  'Explorador': 'bg-purple-500/20 text-purple-600 dark:text-purple-400',
+  'Controlador': 'bg-blue-500/20 text-blue-600 dark:text-blue-400',
+  'Protector': 'bg-pink-500/20 text-pink-600 dark:text-pink-400',
 };
 
 const etapaColors: Record<number, string> = {
@@ -48,6 +63,85 @@ const etapaColors: Record<number, string> = {
   3: 'bg-yellow-500',
   4: 'bg-blue-500',
   5: 'bg-green-500',
+};
+
+const renderPersonajeBadge = (personaje: string, role: 'emisor' | 'receptor') => {
+  const icon = personajeIcons[personaje] || <User className="h-4 w-4" />;
+  const colorClass = personajeColors[personaje] || 'bg-muted text-muted-foreground';
+  
+  return (
+    <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium ${colorClass}`}>
+      {role === 'emisor' ? <User className="h-3 w-3" /> : <Users className="h-3 w-3" />}
+      {icon}
+      <span>{personaje}</span>
+    </div>
+  );
+};
+
+const renderStructureSection = (
+  section: string | StructureSection | undefined, 
+  title: string, 
+  emoji: string
+) => {
+  if (!section) return null;
+  
+  // Handle old format (string only)
+  if (typeof section === 'string') {
+    return (
+      <AccordionItem value={title.toLowerCase()}>
+        <AccordionTrigger className="text-sm font-medium">
+          {emoji} {title}
+        </AccordionTrigger>
+        <AccordionContent>
+          <p className="text-sm text-muted-foreground">{section}</p>
+        </AccordionContent>
+      </AccordionItem>
+    );
+  }
+  
+  // Handle new format with P analysis
+  return (
+    <AccordionItem value={title.toLowerCase()}>
+      <AccordionTrigger className="text-sm font-medium">
+        {emoji} {title}
+      </AccordionTrigger>
+      <AccordionContent className="space-y-3">
+        {section.texto_resumen && (
+          <p className="text-sm text-foreground">{section.texto_resumen}</p>
+        )}
+        
+        <div className="grid gap-3 sm:grid-cols-2">
+          {/* Emisor */}
+          {section.emisor_p && (
+            <div className="p-3 rounded-lg bg-muted/50 space-y-2">
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs font-medium text-muted-foreground">EMISOR</span>
+              </div>
+              {renderPersonajeBadge(section.emisor_p, 'emisor')}
+              {section.emisor_porque && (
+                <p className="text-xs text-muted-foreground mt-1">{section.emisor_porque}</p>
+              )}
+            </div>
+          )}
+          
+          {/* Receptor */}
+          {section.receptor_p && (
+            <div className="p-3 rounded-lg bg-muted/50 space-y-2">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs font-medium text-muted-foreground">RECEPTOR</span>
+              </div>
+              {renderPersonajeBadge(section.receptor_p, 'receptor')}
+              {section.receptor_porque && (
+                <p className="text-xs text-muted-foreground mt-1">{section.receptor_porque}</p>
+              )}
+            </div>
+          )}
+        </div>
+      </AccordionContent>
+    </AccordionItem>
+  );
 };
 
 export default function AnalysisDisplay({ analysis }: AnalysisDisplayProps) {
@@ -109,7 +203,7 @@ export default function AnalysisDisplay({ analysis }: AnalysisDisplayProps) {
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <User className="h-4 w-4" />
-                Comunicador
+                Comunicador (Emisor)
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -150,38 +244,21 @@ export default function AnalysisDisplay({ analysis }: AnalysisDisplayProps) {
 
       {/* Estructura del Mensaje */}
       {analysis.estructura && (
-        <Accordion type="single" collapsible className="w-full">
-          {analysis.estructura.hook && (
-            <AccordionItem value="hook">
-              <AccordionTrigger className="text-sm font-medium">
-                🎣 Hook
-              </AccordionTrigger>
-              <AccordionContent>
-                <p className="text-sm text-muted-foreground">{analysis.estructura.hook}</p>
-              </AccordionContent>
-            </AccordionItem>
-          )}
-          {analysis.estructura.cuerpo && (
-            <AccordionItem value="cuerpo">
-              <AccordionTrigger className="text-sm font-medium">
-                📝 Cuerpo
-              </AccordionTrigger>
-              <AccordionContent>
-                <p className="text-sm text-muted-foreground">{analysis.estructura.cuerpo}</p>
-              </AccordionContent>
-            </AccordionItem>
-          )}
-          {analysis.estructura.cta && (
-            <AccordionItem value="cta">
-              <AccordionTrigger className="text-sm font-medium">
-                🎯 Call to Action
-              </AccordionTrigger>
-              <AccordionContent>
-                <p className="text-sm text-muted-foreground">{analysis.estructura.cta}</p>
-              </AccordionContent>
-            </AccordionItem>
-          )}
-        </Accordion>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <MessageCircle className="h-4 w-4" />
+              Estructura del Mensaje
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Accordion type="single" collapsible className="w-full">
+              {renderStructureSection(analysis.estructura.hook, 'Hook', '🎣')}
+              {renderStructureSection(analysis.estructura.cuerpo, 'Cuerpo', '📝')}
+              {renderStructureSection(analysis.estructura.cta, 'Call to Action', '🎯')}
+            </Accordion>
+          </CardContent>
+        </Card>
       )}
 
       {/* Recomendaciones */}
