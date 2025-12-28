@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Copy, Download, X, ExternalLink, Calendar, Globe } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Copy, Download, X, ExternalLink, Calendar, Globe, Brain, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Transcription } from '@/hooks/useTranscriptions';
@@ -11,20 +13,34 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import AnalysisDisplay from './AnalysisDisplay';
 
 interface TranscriptionDetailProps {
   transcription: Transcription;
   onExport: (transcription: Transcription, format: 'txt' | 'srt') => void;
   onCopy: (text: string) => void;
   onClose: () => void;
+  onAnalyze?: (transcription: Transcription) => Promise<void>;
+  isAnalyzing?: boolean;
 }
 
 export default function TranscriptionDetail({ 
   transcription, 
   onExport, 
   onCopy, 
-  onClose 
+  onClose,
+  onAnalyze,
+  isAnalyzing = false
 }: TranscriptionDetailProps) {
+  const [activeTab, setActiveTab] = useState('transcription');
+
+  const handleAnalyze = async () => {
+    if (onAnalyze) {
+      await onAnalyze(transcription);
+      setActiveTab('analysis');
+    }
+  };
+
   return (
     <Card className="animate-fade-in">
       <CardHeader className="pb-4">
@@ -84,16 +100,51 @@ export default function TranscriptionDetail({
             <ExternalLink className="mr-2 h-4 w-4" />
             Ver original
           </Button>
+
+          <Button 
+            variant="default" 
+            size="sm"
+            onClick={handleAnalyze}
+            disabled={isAnalyzing}
+          >
+            {isAnalyzing ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Brain className="mr-2 h-4 w-4" />
+            )}
+            {isAnalyzing ? 'Analizando...' : 'Analizar'}
+          </Button>
         </div>
 
-        {/* Transcript Content */}
-        <div className="rounded-lg border bg-muted/30 p-4">
-          <ScrollArea className="h-[400px]">
-            <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed">
-              {transcription.transcript}
-            </pre>
-          </ScrollArea>
-        </div>
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="transcription">Transcripción</TabsTrigger>
+            <TabsTrigger value="analysis" className="flex items-center gap-2">
+              <Brain className="h-4 w-4" />
+              Análisis
+              {transcription.analysis && (
+                <span className="h-2 w-2 rounded-full bg-green-500" />
+              )}
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="transcription" className="mt-4">
+            <div className="rounded-lg border bg-muted/30 p-4">
+              <ScrollArea className="h-[400px]">
+                <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed">
+                  {transcription.transcript}
+                </pre>
+              </ScrollArea>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="analysis" className="mt-4">
+            <ScrollArea className="h-[400px]">
+              <AnalysisDisplay analysis={transcription.analysis as any} />
+            </ScrollArea>
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );

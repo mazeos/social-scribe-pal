@@ -24,12 +24,13 @@ const platformIcons: Record<string, React.ReactNode> = {
 };
 
 export default function Dashboard() {
-  const { user, signOut } = useAuth();
-  const { transcriptions, loading, createTranscription, deleteTranscription } = useTranscriptions();
+  const { user, session, signOut } = useAuth();
+  const { transcriptions, loading, createTranscription, deleteTranscription, updateTranscription, refetch } = useTranscriptions();
   const [showNewModal, setShowNewModal] = useState(false);
   const [selectedTranscription, setSelectedTranscription] = useState<Transcription | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -85,6 +86,47 @@ export default function Dashboard() {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success('Copiado al portapapeles');
+  };
+
+  const handleAnalyze = async (transcription: Transcription) => {
+    if (!session) {
+      toast.error('Debes iniciar sesión');
+      return;
+    }
+
+    setIsAnalyzing(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ 
+            transcriptionId: transcription.id,
+            transcript: transcription.transcript 
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al analizar');
+      }
+
+      await refetch();
+      // Update selected transcription with new analysis
+      setSelectedTranscription(prev => prev ? { ...prev, analysis: data.analysis } : null);
+      toast.success('Análisis completado');
+    } catch (error) {
+      console.error('Error analyzing transcription:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al analizar');
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const filteredTranscriptions = transcriptions.filter(t =>
@@ -229,6 +271,8 @@ export default function Dashboard() {
                 onExport={handleExport}
                 onCopy={copyToClipboard}
                 onClose={() => setSelectedTranscription(null)}
+                onAnalyze={handleAnalyze}
+                isAnalyzing={isAnalyzing}
               />
             ) : (
               <Card className="border-dashed">
