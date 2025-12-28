@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { ArrowLeft, Eye, EyeOff, Key, Save, Trash2, Brain, Sparkles } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, Key, Save, Trash2, Brain } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ApiKey {
@@ -28,7 +28,7 @@ const ANALYSIS_KEYS = [
   { name: 'CLAUDE_API_KEY', label: 'Anthropic Claude API Key', description: 'Para análisis con Claude' },
 ];
 
-type AnalysisProvider = 'lovable' | 'gemini' | 'claude';
+type AnalysisProvider = 'gemini' | 'claude';
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -38,7 +38,7 @@ export default function Settings() {
   const [saving, setSaving] = useState<string | null>(null);
   const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
   const [keyValues, setKeyValues] = useState<Record<string, string>>({});
-  const [analysisProvider, setAnalysisProvider] = useState<AnalysisProvider>('lovable');
+  const [analysisProvider, setAnalysisProvider] = useState<AnalysisProvider>('gemini');
   const [savingProvider, setSavingProvider] = useState(false);
 
   useEffect(() => {
@@ -193,7 +193,7 @@ export default function Settings() {
       }
 
       setAnalysisProvider(provider);
-      toast.success(`Proveedor de análisis: ${provider === 'lovable' ? 'Lovable AI' : provider === 'gemini' ? 'Google Gemini' : 'Anthropic Claude'}`);
+      toast.success(`Proveedor de análisis: ${provider === 'gemini' ? 'Google Gemini' : 'Anthropic Claude'}`);
       await fetchApiKeys();
     } catch (error) {
       console.error('Error saving provider:', error);
@@ -330,22 +330,6 @@ export default function Settings() {
               disabled={savingProvider}
             >
               <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
-                <RadioGroupItem value="lovable" id="lovable" />
-                <Label htmlFor="lovable" className="flex-1 cursor-pointer">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                    <span className="font-medium">Lovable AI</span>
-                    <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
-                      Recomendado
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Sin necesidad de API key. Usa créditos de tu cuenta Lovable.
-                  </p>
-                </Label>
-              </div>
-
-              <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
                 <RadioGroupItem value="gemini" id="gemini" />
                 <Label htmlFor="gemini" className="flex-1 cursor-pointer">
                   <div className="flex items-center gap-2">
@@ -381,19 +365,17 @@ export default function Settings() {
             </RadioGroup>
 
             {/* API Keys for selected provider */}
-            {(analysisProvider === 'gemini' || analysisProvider === 'claude') && (
-              <div className="pt-4 border-t border-border">
-                <h4 className="text-sm font-medium text-foreground mb-4">
-                  Configurar API Key
-                </h4>
-                {analysisProvider === 'gemini' && 
-                  renderApiKeyInput('GEMINI_API_KEY', 'Google Gemini API Key', 'Obtén tu key en Google AI Studio')
-                }
-                {analysisProvider === 'claude' && 
-                  renderApiKeyInput('CLAUDE_API_KEY', 'Anthropic Claude API Key', 'Obtén tu key en console.anthropic.com')
-                }
-              </div>
-            )}
+            <div className="pt-4 border-t border-border">
+              <h4 className="text-sm font-medium text-foreground mb-4">
+                Configurar API Key
+              </h4>
+              {analysisProvider === 'gemini' && 
+                renderApiKeyInput('GEMINI_API_KEY', 'Google Gemini API Key', 'Obtén tu key en Google AI Studio')
+              }
+              {analysisProvider === 'claude' && 
+                renderApiKeyInput('CLAUDE_API_KEY', 'Anthropic Claude API Key', 'Obtén tu key en console.anthropic.com')
+              }
+            </div>
           </CardContent>
         </Card>
 
