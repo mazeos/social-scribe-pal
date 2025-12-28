@@ -51,66 +51,109 @@ Analiza la transcripción proporcionada y responde **ÚNICAMENTE con un JSON vá
 
 {
   "metadata": {
-    "creador": "[nombre del creador si se conoce o 'Desconocido']",
-    "plataforma": "[TikTok/Reels/Shorts/Desconocida]",
-    "duracion_aproximada": "[X segundos o 'No especificada']"
+    "creador": "[nombre si se identifica o 'No identificado']",
+    "plataforma": "[TikTok/Reels/Shorts/formato corto]",
+    "duracion_aproximada": "[estimación en segundos]"
   },
   "nivel_consciencia": {
-    "nivel": "[UNAWARE / PROBLEM AWARE / SOLUTION AWARE / PRODUCT AWARE / MOST AWARE]",
-    "justificacion": "[Qué elementos específicos del texto revelan este nivel - cita frases exactas]"
+    "nivel": "[UNAWARE / PROBLEM AWARE / SOLUTION AWARE / PRODUCT AWARE / MOST AWARE - puede ser transición como 'PROBLEM AWARE → SOLUTION AWARE']",
+    "justificacion": "[Explicación detallada con citas textuales exactas del contenido que demuestran este nivel. Explica qué valida, qué amplifica, qué posiciona.]"
   },
   "hook": {
-    "transcripcion_exacta": "[Primeras 1-2 oraciones exactas]",
-    "creador_personaje": "[P1/P2/P3/P4]",
-    "creador_justificacion": "[Qué palabras/tono revelan este personaje]",
-    "receptor_personaje": "[P1/P2/P3/P4]",
-    "receptor_justificacion": "[Qué personaje se activa en quien escucha y por qué]",
-    "mecanismo_retencion": "[¿Por qué alguien NO haría scroll? Sé específico]"
+    "transcripcion_exacta": "[Las primeras 1-2 oraciones textuales del contenido]",
+    "personalidades": [
+      {
+        "rol": "Creador",
+        "personaje": "[P1/P2/P3/P4]",
+        "nombre": "[Analítico/Protector/Experiencial/Sabio]",
+        "justificacion": "[Qué palabras específicas, tono o estructura revelan este personaje]"
+      },
+      {
+        "rol": "Receptor",
+        "personaje": "[P1/P2/P3/P4 - puede ser combinación como 'P3+P1']",
+        "nombre": "[nombres de los personajes]",
+        "justificacion": "[Qué personaje se activa en quien escucha y por qué]"
+      }
+    ],
+    "mecanismo_retencion": [
+      "[Punto 1: ¿Por qué alguien NO haría scroll?]",
+      "[Punto 2: Otro mecanismo de retención]",
+      "[Punto 3: Otro mecanismo si aplica]"
+    ]
   },
   "body": {
-    "estructura_identificada": "[Descripción de la estructura, no el contenido]",
-    "creador_personaje": "[P1/P2/P3/P4]",
-    "creador_justificacion": "[Qué palabras/tono revelan este personaje]",
-    "receptor_personaje": "[P1/P2/P3/P4]",
-    "receptor_justificacion": "[Qué personaje se activa en quien escucha y por qué]",
-    "transiciones": "[Si cambia de personaje durante el body, documenta dónde y por qué. Si no hay cambios, indica 'Sin transiciones']"
+    "estructura_identificada": "[Descripción de la estructura en formato: ELEMENTO 1 → ELEMENTO 2 → ELEMENTO 3]",
+    "personalidades": [
+      {
+        "rol": "Creador",
+        "personaje": "[Secuencia completa, ej: 'P4→P2→P4→P1']",
+        "justificacion": "[Por qué esta secuencia de transiciones]"
+      },
+      {
+        "rol": "Receptor",
+        "personaje": "[Secuencia completa, ej: 'P3→P2→P4→P1']",
+        "justificacion": "[Qué experimenta el receptor en cada transición]"
+      }
+    ],
+    "transiciones": [
+      {
+        "cita": "[Frase exacta del contenido que marca la transición]",
+        "creador_p": "[P1/P2/P3/P4]",
+        "creador_porque": "[Por qué el creador usa este personaje aquí]",
+        "receptor_p": "[P1/P2/P3/P4]",
+        "receptor_porque": "[Qué efecto tiene en el receptor]"
+      }
+    ]
   },
   "cta": {
-    "transcripcion_exacta": "[Cierre / llamada a la acción exacta]",
-    "creador_personaje": "[P1/P2/P3/P4]",
-    "creador_justificacion": "[Qué palabras/tono revelan este personaje]",
-    "receptor_personaje": "[P1/P2/P3/P4]",
-    "receptor_justificacion": "[Qué personaje se activa en quien escucha y por qué]",
-    "tipo_cta": "[Engagement / Follow / Conversión / Implícito / Ninguno]"
+    "transcripcion_exacta": "[Las últimas oraciones / cierre del contenido]",
+    "personalidades": [
+      {
+        "rol": "Creador",
+        "personaje": "[P1/P2/P3/P4]",
+        "nombre": "[Analítico/Protector/Experiencial/Sabio]",
+        "justificacion": "[Qué palabras o tono revelan este personaje en el cierre]"
+      },
+      {
+        "rol": "Receptor",
+        "personaje": "[P1/P2/P3/P4]",
+        "nombre": "[nombre del personaje]",
+        "justificacion": "[Qué experimenta el receptor al final]"
+      }
+    ],
+    "tipo_cta": "[Engagement / Follow / Conversión / Implícito / Ninguno]",
+    "descripcion_cta": "[Explicación de qué tipo de acción busca el CTA y por qué es efectivo]"
   },
   "secuencia_personajes": {
-    "creador": "Hook [P_] → Body [P_] → CTA [P_]",
-    "receptor": "Hook [P_] → Body [P_] → CTA [P_]"
+    "creador": "[Hook [P_] → Body [P_→P_→P_] → CTA [P_]]",
+    "receptor": "[Hook [P_+P_] → Body [P_→P_→P_] → CTA [P_]]",
+    "patron_dominante": "[Descripción del patrón, ej: 'P4 BOOKEND - abre y cierra con sabiduría']"
   },
   "formula_replicable": {
-    "template": "[HOOK: tipo de apertura] → [BODY: tipo de desarrollo] → [CTA: tipo de cierre]",
-    "patron_una_linea": "[Fórmula sin contenido específico, aplicable a cualquier tema]"
+    "template": "[HOOK: tipo] → [CREDIBILIDAD: tipo] → [VULNERABILIDAD: tipo] → [PRINCIPIO: tipo] → [DEMOSTRACIÓN: tipo] → [CTA: tipo]",
+    "patron_una_linea": "[Fórmula completa en una oración, sin contenido específico, aplicable a cualquier tema]"
   },
   "sintesis": {
     "elementos_replicables": [
-      "[Elemento estructural 1 que puedes usar]",
-      "[Elemento estructural 2 que puedes usar]",
-      "[Elemento estructural 3 que puedes usar]"
+      "[Elemento 1 con explicación de POR QUÉ funciona]",
+      "[Elemento 2 con explicación de POR QUÉ funciona]",
+      "[Elemento 3 con explicación de POR QUÉ funciona]"
     ],
     "elementos_no_copiables": [
-      "[Qué es único del creador/contexto]",
-      "[Qué depende de factores externos]"
+      "[Elemento único del creador/contexto y por qué no es transferible]",
+      "[Otro elemento que depende de factores externos]"
     ],
-    "aplicacion_inmediata": "[Una oración describiendo cómo usarías esta estructura para tu contenido]"
+    "aplicacion_inmediata": "[Ejemplo concreto de cómo usarías esta estructura para TU contenido, con la misma fórmula pero diferente tema]"
   }
 }
 
 ## NOTAS IMPORTANTES
 
-- Sé específico en justificaciones. No digas "activa P2" sin citar qué palabra o frase lo hace.
+- Sé MUY específico en justificaciones. Cita palabras exactas del texto.
+- Documenta TODAS las transiciones de personaje en el body.
 - Distingue entre lo que el creador PROYECTA y lo que el receptor EXPERIMENTA.
+- Los personajes pueden combinarse (P3+P1) o transicionar (P4→P2→P4).
 - El objetivo es extraer la ESTRUCTURA, no el contenido.
-- Si hay ambigüedad, indica las opciones posibles con su probabilidad.
 - Responde SOLO con el JSON, sin texto antes ni después.
 
 ---
@@ -171,7 +214,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Find provider and API key - match the key names from Settings page
+    // Find provider and API key
     const providerSetting = apiKeys?.find(k => k.key_name === "ANALYSIS_PROVIDER");
     const provider = providerSetting?.key_value || "gemini";
     
@@ -193,7 +236,6 @@ Deno.serve(async (req) => {
     let analysis;
 
     if (provider === "gemini") {
-      // Call Gemini API
       const geminiResponse = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
         {
@@ -207,7 +249,7 @@ Deno.serve(async (req) => {
               temperature: 0.7,
               topP: 0.95,
               topK: 40,
-              maxOutputTokens: 4096,
+              maxOutputTokens: 8192,
             }
           })
         }
@@ -231,7 +273,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Extract JSON from response
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         analysis = JSON.parse(jsonMatch[0]);
@@ -243,7 +284,6 @@ Deno.serve(async (req) => {
       }
 
     } else if (provider === "claude") {
-      // Call Claude API
       const claudeResponse = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
@@ -252,8 +292,8 @@ Deno.serve(async (req) => {
           "anthropic-version": "2023-06-01"
         },
         body: JSON.stringify({
-          model: "claude-3-haiku-20240307",
-          max_tokens: 4096,
+          model: "claude-sonnet-4-5",
+          max_tokens: 8192,
           messages: [{
             role: "user",
             content: MASTER_PROMPT + transcript
@@ -279,7 +319,6 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Extract JSON from response
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         analysis = JSON.parse(jsonMatch[0]);
