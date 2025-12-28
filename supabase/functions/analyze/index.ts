@@ -106,17 +106,20 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Find provider and API key
-    const providerSetting = apiKeys?.find(k => k.key_name === "ai_provider");
+    // Find provider and API key - match the key names from Settings page
+    const providerSetting = apiKeys?.find(k => k.key_name === "ANALYSIS_PROVIDER");
     const provider = providerSetting?.key_value || "gemini";
     
+    console.log("Provider selected:", provider);
+    console.log("Available keys:", apiKeys?.map(k => k.key_name));
+    
     const apiKeyRecord = apiKeys?.find(k => 
-      k.key_name === (provider === "gemini" ? "gemini_api_key" : "anthropic_api_key")
+      k.key_name === (provider === "gemini" ? "GEMINI_API_KEY" : "CLAUDE_API_KEY")
     );
 
     if (!apiKeyRecord) {
       return new Response(
-        JSON.stringify({ error: `API key for ${provider} not configured. Go to Settings to add it.` }),
+        JSON.stringify({ error: `API key for ${provider === "gemini" ? "Gemini" : "Claude"} not configured. Go to Settings to add it.` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
