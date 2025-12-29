@@ -214,11 +214,16 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Find provider and API key
+    // Find provider, model and API key
     const providerSetting = apiKeys?.find(k => k.key_name === "ANALYSIS_PROVIDER");
     const provider = providerSetting?.key_value || "gemini";
     
+    const modelSetting = apiKeys?.find(k => k.key_name === "ANALYSIS_MODEL");
+    const defaultModel = provider === "gemini" ? "gemini-2.0-flash" : "claude-sonnet-4-5-20241022";
+    const selectedModel = modelSetting?.key_value || defaultModel;
+    
     console.log("Provider selected:", provider);
+    console.log("Model selected:", selectedModel);
     console.log("Available keys:", apiKeys?.map(k => k.key_name));
     
     const apiKeyRecord = apiKeys?.find(k => 
@@ -237,7 +242,7 @@ Deno.serve(async (req) => {
 
     if (provider === "gemini") {
       const geminiResponse = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -292,7 +297,7 @@ Deno.serve(async (req) => {
           "anthropic-version": "2023-06-01"
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-5",
+          model: selectedModel,
           max_tokens: 8192,
           messages: [{
             role: "user",
