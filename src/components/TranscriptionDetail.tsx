@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Copy, Download, X, ExternalLink, Calendar, Globe, Brain, Loader2 } from 'lucide-react';
+import { Copy, Download, X, ExternalLink, Calendar, Globe, Brain, Loader2, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Transcription } from '@/hooks/useTranscriptions';
@@ -14,6 +14,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import AnalysisDisplay from './AnalysisDisplay';
+import jsPDF from 'jspdf';
+import { toast } from 'sonner';
 
 interface TranscriptionDetailProps {
   transcription: Transcription;
@@ -39,6 +41,111 @@ export default function TranscriptionDetail({
       await onAnalyze(transcription);
       setActiveTab('analysis');
     }
+  };
+
+  const exportAnalysisPDF = () => {
+    const analysis = transcription.analysis as any;
+    if (!analysis) {
+      toast.error('No hay análisis para exportar');
+      return;
+    }
+
+    const pdf = new jsPDF();
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const margin = 20;
+    const maxWidth = pageWidth - margin * 2;
+    let yPos = 20;
+
+    const addText = (text: string, fontSize: number = 10, isBold: boolean = false) => {
+      pdf.setFontSize(fontSize);
+      pdf.setFont('helvetica', isBold ? 'bold' : 'normal');
+      const lines = pdf.splitTextToSize(text, maxWidth);
+      lines.forEach((line: string) => {
+        if (yPos > 270) {
+          pdf.addPage();
+          yPos = 20;
+        }
+        pdf.text(line, margin, yPos);
+        yPos += fontSize * 0.5;
+      });
+      yPos += 3;
+    };
+
+    const addSection = (title: string) => {
+      yPos += 5;
+      addText(title, 14, true);
+      yPos += 2;
+    };
+
+    // Title
+    addText(`Análisis: ${transcription.title}`, 18, true);
+    addText(`Fecha: ${format(new Date(transcription.created_at), "d MMM yyyy, HH:mm", { locale: es })}`, 10);
+    yPos += 5;
+
+    // Nivel de Consciencia
+    if (analysis.nivel_consciencia) {
+      addSection('Nivel de Consciencia');
+      addText(`Nivel: ${analysis.nivel_consciencia.nivel}`, 11, true);
+      addText(analysis.nivel_consciencia.justificacion, 10);
+    }
+
+    // Hook
+    if (analysis.hook) {
+      addSection('Análisis del Hook');
+      if (analysis.hook.transcripcion_exacta) {
+        addText(`"${analysis.hook.transcripcion_exacta}"`, 10);
+      }
+      if (analysis.hook.mecanismo_retencion?.length) {
+        addText('Mecanismo de retención:', 10, true);
+        analysis.hook.mecanismo_retencion.forEach((m: string) => addText(`• ${m}`, 10));
+      }
+    }
+
+    // Body
+    if (analysis.body) {
+      addSection('Análisis del Body');
+      if (analysis.body.estructura_identificada) {
+        addText(`Estructura: ${analysis.body.estructura_identificada}`, 10);
+      }
+    }
+
+    // CTA
+    if (analysis.cta) {
+      addSection('Análisis del CTA');
+      if (analysis.cta.transcripcion_exacta) {
+        addText(`"${analysis.cta.transcripcion_exacta}"`, 10);
+      }
+      if (analysis.cta.tipo_cta) {
+        addText(`Tipo: ${analysis.cta.tipo_cta}`, 10);
+      }
+    }
+
+    // Fórmula Replicable
+    if (analysis.formula_replicable) {
+      addSection('Fórmula Replicable');
+      if (analysis.formula_replicable.patron_una_linea) {
+        addText(analysis.formula_replicable.patron_una_linea, 11, true);
+      }
+      if (analysis.formula_replicable.template) {
+        addText(analysis.formula_replicable.template, 10);
+      }
+    }
+
+    // Síntesis
+    if (analysis.sintesis) {
+      addSection('Síntesis Final');
+      if (analysis.sintesis.elementos_replicables?.length) {
+        addText('Elementos replicables:', 10, true);
+        analysis.sintesis.elementos_replicables.forEach((e: string) => addText(`✓ ${e}`, 10));
+      }
+      if (analysis.sintesis.aplicacion_inmediata) {
+        addText('Aplicación inmediata:', 10, true);
+        addText(analysis.sintesis.aplicacion_inmediata, 10);
+      }
+    }
+
+    pdf.save(`analisis-${transcription.title.replace(/[^a-zA-Z0-9]/g, '-')}.pdf`);
+    toast.success('PDF descargado');
   };
 
   return (
@@ -84,11 +191,19 @@ export default function TranscriptionDetail({
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem onClick={() => onExport(transcription, 'txt')}>
+                <FileText className="mr-2 h-4 w-4" />
                 Texto plano (.txt)
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onExport(transcription, 'srt')}>
+                <FileText className="mr-2 h-4 w-4" />
                 Subtítulos (.srt)
               </DropdownMenuItem>
+              {transcription.analysis && (
+                <DropdownMenuItem onClick={exportAnalysisPDF}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Análisis PDF
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 
