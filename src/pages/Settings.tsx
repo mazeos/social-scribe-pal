@@ -30,8 +30,8 @@ const GEMINI_MODELS = [
 ];
 
 const CLAUDE_MODELS = [
-  { id: 'claude-sonnet-4-5-20241022', name: 'Claude Sonnet 4.5', description: 'Más capaz e inteligente' },
-  { id: 'claude-opus-4-5-20251101', name: 'Claude Opus 4.5', description: 'El más inteligente, más caro' },
+  { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4', description: 'Alto rendimiento, razonamiento excepcional' },
+  { id: 'claude-3-7-sonnet-20250219', name: 'Claude 3.7 Sonnet', description: 'Pensamiento extendido, muy capaz' },
   { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet', description: 'Anterior generación, estable' },
   { id: 'claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku', description: 'El más rápido' },
 ];
@@ -86,7 +86,7 @@ export default function Settings() {
         setSelectedModel(modelKey.key_value);
       } else {
         // Set default based on provider
-        setSelectedModel(providerKey?.key_value === 'claude' ? 'claude-sonnet-4-5-20241022' : 'gemini-2.0-flash');
+        setSelectedModel(providerKey?.key_value === 'claude' ? 'claude-sonnet-4-20250514' : 'gemini-2.0-flash');
       }
     } catch (error) {
       console.error('Error fetching API keys:', error);
@@ -203,7 +203,7 @@ export default function Settings() {
       setAnalysisProvider(provider);
       
       // Set default model for the new provider
-      const defaultModel = provider === 'gemini' ? 'gemini-2.0-flash' : 'claude-sonnet-4-5-20241022';
+      const defaultModel = provider === 'gemini' ? 'gemini-2.0-flash' : 'claude-sonnet-4-20250514';
       await handleModelChange(defaultModel);
       
       toast.success(`Proveedor: ${provider === 'gemini' ? 'Google Gemini' : 'Anthropic Claude'}`);
