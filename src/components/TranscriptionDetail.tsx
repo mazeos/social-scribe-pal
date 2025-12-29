@@ -52,100 +52,287 @@ export default function TranscriptionDetail({
 
     const pdf = new jsPDF();
     const pageWidth = pdf.internal.pageSize.getWidth();
-    const margin = 20;
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 15;
     const maxWidth = pageWidth - margin * 2;
-    let yPos = 20;
+    let yPos = margin;
 
-    const addText = (text: string, fontSize: number = 10, isBold: boolean = false) => {
-      pdf.setFontSize(fontSize);
-      pdf.setFont('helvetica', isBold ? 'bold' : 'normal');
-      const lines = pdf.splitTextToSize(text, maxWidth);
-      lines.forEach((line: string) => {
-        if (yPos > 270) {
-          pdf.addPage();
-          yPos = 20;
-        }
-        pdf.text(line, margin, yPos);
-        yPos += fontSize * 0.5;
-      });
-      yPos += 3;
+    const lineHeight = 5;
+    const sectionGap = 8;
+    const paragraphGap = 4;
+
+    const checkNewPage = (neededSpace: number = 20) => {
+      if (yPos + neededSpace > pageHeight - margin) {
+        pdf.addPage();
+        yPos = margin;
+        return true;
+      }
+      return false;
     };
 
-    const addSection = (title: string) => {
-      yPos += 5;
-      addText(title, 14, true);
+    const addText = (text: string, fontSize: number = 10, isBold: boolean = false, color: [number, number, number] = [50, 50, 50]) => {
+      if (!text) return;
+      pdf.setFontSize(fontSize);
+      pdf.setFont('helvetica', isBold ? 'bold' : 'normal');
+      pdf.setTextColor(color[0], color[1], color[2]);
+      const lines = pdf.splitTextToSize(String(text), maxWidth);
+      lines.forEach((line: string) => {
+        checkNewPage();
+        pdf.text(line, margin, yPos);
+        yPos += lineHeight;
+      });
+    };
+
+    const addSectionTitle = (title: string) => {
+      checkNewPage(25);
+      yPos += sectionGap;
+      pdf.setFillColor(59, 130, 246);
+      pdf.rect(margin, yPos - 4, maxWidth, 8, 'F');
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(255, 255, 255);
+      pdf.text(title.toUpperCase(), margin + 3, yPos + 1);
+      yPos += 10;
+    };
+
+    const addSubtitle = (title: string) => {
+      checkNewPage(15);
+      yPos += paragraphGap;
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(59, 130, 246);
+      pdf.text(title, margin, yPos);
+      yPos += lineHeight + 1;
+    };
+
+    const addQuote = (text: string) => {
+      if (!text) return;
+      checkNewPage(15);
+      pdf.setFillColor(245, 245, 245);
+      const quoteText = `"${text}"`;
+      const lines = pdf.splitTextToSize(quoteText, maxWidth - 10);
+      const boxHeight = lines.length * lineHeight + 6;
+      pdf.rect(margin, yPos - 2, maxWidth, boxHeight, 'F');
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'italic');
+      pdf.setTextColor(80, 80, 80);
+      lines.forEach((line: string) => {
+        pdf.text(line, margin + 5, yPos + 2);
+        yPos += lineHeight;
+      });
+      yPos += 4;
+    };
+
+    const addBulletList = (items: string[], bulletChar: string = '•') => {
+      if (!items || !items.length) return;
+      items.forEach((item) => {
+        if (!item) return;
+        checkNewPage(10);
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(60, 60, 60);
+        const lines = pdf.splitTextToSize(`${bulletChar} ${item}`, maxWidth - 8);
+        lines.forEach((line: string, idx: number) => {
+          pdf.text(idx === 0 ? line : `   ${line}`, margin + 3, yPos);
+          yPos += lineHeight;
+        });
+      });
       yPos += 2;
     };
 
-    // Title
-    addText(`Análisis: ${transcription.title}`, 18, true);
-    addText(`Fecha: ${format(new Date(transcription.created_at), "d MMM yyyy, HH:mm", { locale: es })}`, 10);
-    yPos += 5;
+    const addPersonalityTable = (personalities: any[]) => {
+      if (!personalities || !personalities.length) return;
+      personalities.forEach((p) => {
+        if (!p) return;
+        checkNewPage(20);
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(100, 100, 100);
+        pdf.text(`${p.rol || 'N/A'}:`, margin + 3, yPos);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(59, 130, 246);
+        pdf.text(` ${p.personaje || 'N/A'} (${p.nombre || 'N/A'})`, margin + 25, yPos);
+        yPos += lineHeight;
+        if (p.justificacion) {
+          pdf.setTextColor(80, 80, 80);
+          const lines = pdf.splitTextToSize(p.justificacion, maxWidth - 10);
+          lines.forEach((line: string) => {
+            checkNewPage();
+            pdf.text(line, margin + 5, yPos);
+            yPos += lineHeight;
+          });
+        }
+        yPos += 2;
+      });
+    };
 
-    // Nivel de Consciencia
-    if (analysis.nivel_consciencia) {
-      addSection('Nivel de Consciencia');
-      addText(`Nivel: ${analysis.nivel_consciencia.nivel}`, 11, true);
-      addText(analysis.nivel_consciencia.justificacion, 10);
+    // === HEADER ===
+    pdf.setFillColor(30, 41, 59);
+    pdf.rect(0, 0, pageWidth, 35, 'F');
+    pdf.setFontSize(16);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(255, 255, 255);
+    const titleLines = pdf.splitTextToSize(transcription.title, maxWidth - 10);
+    pdf.text(titleLines[0] || 'Análisis', margin, 15);
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(180, 180, 180);
+    pdf.text(`Generado: ${format(new Date(), "d MMM yyyy, HH:mm", { locale: es })}`, margin, 23);
+    pdf.text(`Plataforma: ${transcription.platform}`, margin, 29);
+    yPos = 45;
+
+    // === METADATA ===
+    if (analysis.metadata) {
+      addSectionTitle('Metadata');
+      const meta = analysis.metadata;
+      if (meta.creador) addText(`Creador: ${meta.creador}`, 10);
+      if (meta.plataforma) addText(`Plataforma: ${meta.plataforma}`, 10);
+      if (meta.duracion_aproximada) addText(`Duración: ${meta.duracion_aproximada}`, 10);
     }
 
-    // Hook
+    // === NIVEL DE CONSCIENCIA ===
+    if (analysis.nivel_consciencia) {
+      addSectionTitle('Nivel de Consciencia');
+      addSubtitle(analysis.nivel_consciencia.nivel || 'No identificado');
+      addText(analysis.nivel_consciencia.justificacion, 9);
+    }
+
+    // === HOOK ===
     if (analysis.hook) {
-      addSection('Análisis del Hook');
+      addSectionTitle('Análisis del Hook');
       if (analysis.hook.transcripcion_exacta) {
-        addText(`"${analysis.hook.transcripcion_exacta}"`, 10);
+        addSubtitle('Transcripción');
+        addQuote(analysis.hook.transcripcion_exacta);
+      }
+      if (analysis.hook.personalidades?.length) {
+        addSubtitle('Personalidades');
+        addPersonalityTable(analysis.hook.personalidades);
       }
       if (analysis.hook.mecanismo_retencion?.length) {
-        addText('Mecanismo de retención:', 10, true);
-        analysis.hook.mecanismo_retencion.forEach((m: string) => addText(`• ${m}`, 10));
+        addSubtitle('Mecanismos de Retención');
+        addBulletList(analysis.hook.mecanismo_retencion);
       }
     }
 
-    // Body
+    // === BODY ===
     if (analysis.body) {
-      addSection('Análisis del Body');
+      addSectionTitle('Análisis del Body');
       if (analysis.body.estructura_identificada) {
-        addText(`Estructura: ${analysis.body.estructura_identificada}`, 10);
+        addSubtitle('Estructura');
+        addText(analysis.body.estructura_identificada, 9);
+      }
+      if (analysis.body.personalidades?.length) {
+        addSubtitle('Personalidades');
+        addPersonalityTable(analysis.body.personalidades);
+      }
+      if (analysis.body.transiciones?.length) {
+        addSubtitle('Transiciones');
+        analysis.body.transiciones.forEach((t: any, idx: number) => {
+          checkNewPage(25);
+          if (t.cita) addQuote(t.cita);
+          addText(`Creador (${t.creador_p || 'N/A'}): ${t.creador_porque || ''}`, 9);
+          addText(`Receptor (${t.receptor_p || 'N/A'}): ${t.receptor_porque || ''}`, 9);
+          yPos += 3;
+        });
       }
     }
 
-    // CTA
+    // === CTA ===
     if (analysis.cta) {
-      addSection('Análisis del CTA');
+      addSectionTitle('Análisis del CTA');
       if (analysis.cta.transcripcion_exacta) {
-        addText(`"${analysis.cta.transcripcion_exacta}"`, 10);
+        addSubtitle('Transcripción');
+        addQuote(analysis.cta.transcripcion_exacta);
       }
       if (analysis.cta.tipo_cta) {
-        addText(`Tipo: ${analysis.cta.tipo_cta}`, 10);
+        addText(`Tipo de CTA: ${analysis.cta.tipo_cta}`, 10, true);
+      }
+      if (analysis.cta.descripcion_cta) {
+        addText(analysis.cta.descripcion_cta, 9);
+      }
+      if (analysis.cta.personalidades?.length) {
+        addSubtitle('Personalidades');
+        addPersonalityTable(analysis.cta.personalidades);
       }
     }
 
-    // Fórmula Replicable
+    // === SECUENCIA DE PERSONAJES ===
+    if (analysis.secuencia_personajes) {
+      addSectionTitle('Secuencia de Personajes');
+      const seq = analysis.secuencia_personajes;
+      if (seq.creador) addText(`Creador: ${seq.creador}`, 10);
+      if (seq.receptor) addText(`Receptor: ${seq.receptor}`, 10);
+      if (seq.patron_dominante) {
+        addSubtitle('Patrón Dominante');
+        addText(seq.patron_dominante, 10, true, [59, 130, 246]);
+      }
+    }
+
+    // === FÓRMULA REPLICABLE ===
     if (analysis.formula_replicable) {
-      addSection('Fórmula Replicable');
+      addSectionTitle('Fórmula Replicable');
       if (analysis.formula_replicable.patron_una_linea) {
-        addText(analysis.formula_replicable.patron_una_linea, 11, true);
+        checkNewPage(20);
+        pdf.setFillColor(236, 253, 245);
+        const patternText = analysis.formula_replicable.patron_una_linea;
+        const patternLines = pdf.splitTextToSize(patternText, maxWidth - 10);
+        const boxHeight = patternLines.length * lineHeight + 8;
+        pdf.rect(margin, yPos - 2, maxWidth, boxHeight, 'F');
+        pdf.setDrawColor(34, 197, 94);
+        pdf.rect(margin, yPos - 2, maxWidth, boxHeight, 'S');
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(22, 101, 52);
+        patternLines.forEach((line: string) => {
+          pdf.text(line, margin + 5, yPos + 3);
+          yPos += lineHeight;
+        });
+        yPos += 6;
       }
       if (analysis.formula_replicable.template) {
-        addText(analysis.formula_replicable.template, 10);
+        addSubtitle('Template');
+        addText(analysis.formula_replicable.template, 9);
       }
     }
 
-    // Síntesis
+    // === SÍNTESIS ===
     if (analysis.sintesis) {
-      addSection('Síntesis Final');
+      addSectionTitle('Síntesis Final');
       if (analysis.sintesis.elementos_replicables?.length) {
-        addText('Elementos replicables:', 10, true);
-        analysis.sintesis.elementos_replicables.forEach((e: string) => addText(`✓ ${e}`, 10));
+        addSubtitle('Elementos Replicables');
+        addBulletList(analysis.sintesis.elementos_replicables, '✓');
+      }
+      if (analysis.sintesis.elementos_no_copiables?.length) {
+        addSubtitle('Elementos No Copiables');
+        addBulletList(analysis.sintesis.elementos_no_copiables, '✗');
       }
       if (analysis.sintesis.aplicacion_inmediata) {
-        addText('Aplicación inmediata:', 10, true);
-        addText(analysis.sintesis.aplicacion_inmediata, 10);
+        addSubtitle('Aplicación Inmediata');
+        checkNewPage(20);
+        pdf.setFillColor(254, 249, 195);
+        const appText = analysis.sintesis.aplicacion_inmediata;
+        const appLines = pdf.splitTextToSize(appText, maxWidth - 10);
+        const boxHeight = appLines.length * lineHeight + 8;
+        pdf.rect(margin, yPos - 2, maxWidth, boxHeight, 'F');
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(113, 63, 18);
+        appLines.forEach((line: string) => {
+          pdf.text(line, margin + 5, yPos + 3);
+          yPos += lineHeight;
+        });
+        yPos += 4;
       }
     }
 
-    pdf.save(`analisis-${transcription.title.replace(/[^a-zA-Z0-9]/g, '-')}.pdf`);
-    toast.success('PDF descargado');
+    // === FOOTER on last page ===
+    pdf.setFontSize(8);
+    pdf.setTextColor(150, 150, 150);
+    pdf.text('Generado con Video Analyzer', margin, pageHeight - 10);
+
+    const fileName = `analisis-${transcription.title.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '-').substring(0, 50)}.pdf`;
+    pdf.save(fileName);
+    toast.success('PDF descargado correctamente');
   };
 
   return (
