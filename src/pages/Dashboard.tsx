@@ -179,83 +179,72 @@ export default function Dashboard() {
           </Button>
         </div>
 
-        {/* Content */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Transcriptions List */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Clock className="h-5 w-5 text-muted-foreground" />
+        {/* Content - Layout 30/70 */}
+        <div className="flex gap-6">
+          {/* Transcriptions List - Compact 30% */}
+          <div className="w-full lg:w-[30%] lg:min-w-[280px] lg:max-w-[360px] space-y-3">
+            <h2 className="text-sm font-semibold flex items-center gap-2 text-muted-foreground uppercase tracking-wide">
+              <Clock className="h-4 w-4" />
               Historial
-              <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+              <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-xs">
                 {filteredTranscriptions.length}
               </span>
             </h2>
 
             {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
             ) : filteredTranscriptions.length === 0 ? (
               <Card className="border-dashed">
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <FileText className="mb-4 h-12 w-12 text-muted-foreground/50" />
-                  <p className="text-center text-muted-foreground">
-                    {searchQuery ? 'No se encontraron resultados' : 'Aún no tienes transcripciones'}
+                <CardContent className="flex flex-col items-center justify-center py-8">
+                  <FileText className="mb-2 h-8 w-8 text-muted-foreground/50" />
+                  <p className="text-center text-sm text-muted-foreground">
+                    {searchQuery ? 'Sin resultados' : 'Sin transcripciones'}
                   </p>
                   {!searchQuery && (
                     <Button 
                       variant="link" 
+                      size="sm"
                       onClick={() => setShowNewModal(true)}
-                      className="mt-2"
+                      className="mt-1"
                     >
-                      Crear tu primera transcripción
+                      Crear primera
                     </Button>
                   )}
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-3">
-                {filteredTranscriptions.map((t, idx) => (
+              <div className="space-y-2 max-h-[calc(100vh-220px)] overflow-y-auto pr-1">
+                {filteredTranscriptions.map((t) => (
                   <Card 
                     key={t.id}
-                    className={`cursor-pointer transition-all hover:shadow-md ${
-                      selectedTranscription?.id === t.id ? 'ring-2 ring-primary' : ''
+                    className={`cursor-pointer transition-all hover:shadow-sm hover:bg-accent/50 ${
+                      selectedTranscription?.id === t.id ? 'ring-2 ring-primary bg-accent/30' : ''
                     }`}
-                    style={{ animationDelay: `${idx * 50}ms` }}
                     onClick={() => setSelectedTranscription(t)}
                   >
-                    <CardContent className="flex items-center gap-4 p-4">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
-                        {platformIcons[t.platform] || <FileText className="h-4 w-4" />}
+                    <CardContent className="flex items-center gap-3 p-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
+                        {platformIcons[t.platform] || <FileText className="h-3 w-3" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium truncate">{t.title}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(t.created_at), "d 'de' MMMM, HH:mm", { locale: es })}
+                        <h3 className="text-sm font-medium truncate">{t.title}</h3>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(t.created_at), "d MMM, HH:mm", { locale: es })}
                         </p>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.open(t.url, '_blank');
-                          }}
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(t.id);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 opacity-0 group-hover:opacity-100 hover:opacity-100"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(t.id);
+                        }}
+                      >
+                        <Trash2 className="h-3 w-3 text-destructive" />
+                      </Button>
                     </CardContent>
                   </Card>
                 ))}
@@ -263,8 +252,8 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Detail View */}
-          <div className="lg:sticky lg:top-24 lg:self-start">
+          {/* Detail View - Main 70% */}
+          <div className="hidden lg:block flex-1">
             {selectedTranscription ? (
               <TranscriptionDetail
                 transcription={selectedTranscription}
@@ -275,8 +264,8 @@ export default function Dashboard() {
                 isAnalyzing={isAnalyzing}
               />
             ) : (
-              <Card className="border-dashed">
-                <CardContent className="flex flex-col items-center justify-center py-16">
+              <Card className="border-dashed h-[calc(100vh-220px)]">
+                <CardContent className="flex flex-col items-center justify-center h-full">
                   <FileText className="mb-4 h-16 w-16 text-muted-foreground/30" />
                   <p className="text-center text-muted-foreground">
                     Selecciona una transcripción para ver el detalle
@@ -285,6 +274,22 @@ export default function Dashboard() {
               </Card>
             )}
           </div>
+
+          {/* Mobile Detail View */}
+          {selectedTranscription && (
+            <div className="fixed inset-0 z-50 bg-background lg:hidden overflow-auto">
+              <div className="p-4">
+                <TranscriptionDetail
+                  transcription={selectedTranscription}
+                  onExport={handleExport}
+                  onCopy={copyToClipboard}
+                  onClose={() => setSelectedTranscription(null)}
+                  onAnalyze={handleAnalyze}
+                  isAnalyzing={isAnalyzing}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
