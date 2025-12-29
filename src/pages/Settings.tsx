@@ -31,6 +31,7 @@ const GEMINI_MODELS = [
 
 const CLAUDE_MODELS = [
   { id: 'claude-sonnet-4-5-20241022', name: 'Claude Sonnet 4.5', description: 'Más capaz e inteligente' },
+  { id: 'claude-opus-4-5-20251101', name: 'Claude Opus 4.5', description: 'El más inteligente, más caro' },
   { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet', description: 'Anterior generación, estable' },
   { id: 'claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku', description: 'El más rápido' },
 ];
