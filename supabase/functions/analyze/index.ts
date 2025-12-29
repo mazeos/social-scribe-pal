@@ -219,7 +219,7 @@ Deno.serve(async (req) => {
     const provider = providerSetting?.key_value || "gemini";
     
     const modelSetting = apiKeys?.find(k => k.key_name === "ANALYSIS_MODEL");
-    const defaultModel = provider === "gemini" ? "gemini-2.0-flash" : "claude-sonnet-4-5-20241022";
+    const defaultModel = provider === "gemini" ? "gemini-2.0-flash" : "claude-sonnet-4-20250514";
     const selectedModel = modelSetting?.key_value || defaultModel;
     
     console.log("Provider selected:", provider);
