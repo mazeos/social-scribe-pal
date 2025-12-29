@@ -5,9 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { ArrowLeft, Eye, EyeOff, Key, Save, Trash2, Brain, FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, Eye, EyeOff, Key, Save, Trash2, Brain, Cpu } from 'lucide-react';
 import { toast } from 'sonner';
 import { PromptMaestro } from '@/components/PromptMaestro';
 
@@ -24,9 +23,16 @@ const TRANSCRIPTION_KEYS = [
   { name: 'SUPADATA_API_KEY', label: 'Supadata API Key', description: 'Para extraer audio de videos' },
 ];
 
-const ANALYSIS_KEYS = [
-  { name: 'GEMINI_API_KEY', label: 'Google Gemini API Key', description: 'Para análisis con Gemini' },
-  { name: 'CLAUDE_API_KEY', label: 'Anthropic Claude API Key', description: 'Para análisis con Claude' },
+const GEMINI_MODELS = [
+  { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', description: 'Más rápido, nueva generación' },
+  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', description: 'Más potente, mejor razonamiento' },
+  { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', description: 'Balance velocidad/calidad' },
+];
+
+const CLAUDE_MODELS = [
+  { id: 'claude-sonnet-4-5-20241022', name: 'Claude Sonnet 4.5', description: 'Más capaz e inteligente' },
+  { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet', description: 'Anterior generación, estable' },
+  { id: 'claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku', description: 'El más rápido' },
 ];
 
 type AnalysisProvider = 'gemini' | 'claude';
@@ -40,6 +46,7 @@ export default function Settings() {
   const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
   const [keyValues, setKeyValues] = useState<Record<string, string>>({});
   const [analysisProvider, setAnalysisProvider] = useState<AnalysisProvider>('gemini');
+  const [selectedModel, setSelectedModel] = useState<string>('gemini-2.0-flash');
   const [savingProvider, setSavingProvider] = useState(false);
 
   useEffect(() => {
@@ -70,6 +77,15 @@ export default function Settings() {
       const providerKey = data?.find(k => k.key_name === 'ANALYSIS_PROVIDER');
       if (providerKey) {
         setAnalysisProvider(providerKey.key_value as AnalysisProvider);
+      }
+      
+      // Get selected model preference
+      const modelKey = data?.find(k => k.key_name === 'ANALYSIS_MODEL');
+      if (modelKey) {
+        setSelectedModel(modelKey.key_value);
+      } else {
+        // Set default based on provider
+        setSelectedModel(providerKey?.key_value === 'claude' ? 'claude-sonnet-4-5-20241022' : 'gemini-2.0-flash');
       }
     } catch (error) {
       console.error('Error fetching API keys:', error);
@@ -160,7 +176,6 @@ export default function Settings() {
   };
 
   const handleProviderChange = async (provider: AnalysisProvider) => {
-    // Allow selection - we'll show the API key form regardless
     setSavingProvider(true);
     try {
       const existingKey = apiKeys.find(k => k.key_name === 'ANALYSIS_PROVIDER');
@@ -185,13 +200,51 @@ export default function Settings() {
       }
 
       setAnalysisProvider(provider);
-      toast.success(`Proveedor de análisis: ${provider === 'gemini' ? 'Google Gemini' : 'Anthropic Claude'}`);
+      
+      // Set default model for the new provider
+      const defaultModel = provider === 'gemini' ? 'gemini-2.0-flash' : 'claude-sonnet-4-5-20241022';
+      await handleModelChange(defaultModel);
+      
+      toast.success(`Proveedor: ${provider === 'gemini' ? 'Google Gemini' : 'Anthropic Claude'}`);
       await fetchApiKeys();
     } catch (error) {
       console.error('Error saving provider:', error);
       toast.error('Error al guardar el proveedor');
     } finally {
       setSavingProvider(false);
+    }
+  };
+
+  const handleModelChange = async (model: string) => {
+    setSelectedModel(model);
+    try {
+      const existingKey = apiKeys.find(k => k.key_name === 'ANALYSIS_MODEL');
+
+      if (existingKey) {
+        const { error } = await supabase
+          .from('user_api_keys')
+          .update({ key_value: model })
+          .eq('id', existingKey.id);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('user_api_keys')
+          .insert({
+            user_id: user!.id,
+            key_name: 'ANALYSIS_MODEL',
+            key_value: model
+          });
+
+        if (error) throw error;
+      }
+
+      const modelName = [...GEMINI_MODELS, ...CLAUDE_MODELS].find(m => m.id === model)?.name || model;
+      toast.success(`Modelo: ${modelName}`);
+      await fetchApiKeys();
+    } catch (error) {
+      console.error('Error saving model:', error);
+      toast.error('Error al guardar el modelo');
     }
   };
 
@@ -351,8 +404,32 @@ export default function Settings() {
                 <p className="text-xs text-muted-foreground mb-3 ml-7">
                   Usa tu propia API key de Google AI Studio.
                 </p>
-                <div className="ml-7" onClick={(e) => e.stopPropagation()}>
+                <div className="ml-7 space-y-4" onClick={(e) => e.stopPropagation()}>
                   {renderApiKeyInput('GEMINI_API_KEY', 'API Key de Gemini', 'aistudio.google.com/app/apikey')}
+                  
+                  {analysisProvider === 'gemini' && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Cpu className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">Modelo</span>
+                      </div>
+                      <Select value={selectedModel} onValueChange={handleModelChange}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Selecciona un modelo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {GEMINI_MODELS.map((model) => (
+                            <SelectItem key={model.id} value={model.id}>
+                              <div className="flex flex-col">
+                                <span>{model.name}</span>
+                                <span className="text-xs text-muted-foreground">{model.description}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -390,8 +467,32 @@ export default function Settings() {
                 <p className="text-xs text-muted-foreground mb-3 ml-7">
                   Usa tu propia API key de Anthropic.
                 </p>
-                <div className="ml-7" onClick={(e) => e.stopPropagation()}>
+                <div className="ml-7 space-y-4" onClick={(e) => e.stopPropagation()}>
                   {renderApiKeyInput('CLAUDE_API_KEY', 'API Key de Claude', 'console.anthropic.com/settings/keys')}
+                  
+                  {analysisProvider === 'claude' && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Cpu className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">Modelo</span>
+                      </div>
+                      <Select value={selectedModel} onValueChange={handleModelChange}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Selecciona un modelo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CLAUDE_MODELS.map((model) => (
+                            <SelectItem key={model.id} value={model.id}>
+                              <div className="flex flex-col">
+                                <span>{model.name}</span>
+                                <span className="text-xs text-muted-foreground">{model.description}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
