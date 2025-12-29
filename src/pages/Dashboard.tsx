@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   Loader2, LogOut, Plus, Search, Youtube, 
-  FileText, Download, Trash2, Clock, ExternalLink, Settings 
+  FileText, Download, Trash2, Clock, ExternalLink, Settings,
+  PanelLeftClose, PanelLeft
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -30,6 +31,7 @@ export default function Dashboard() {
   const [selectedTranscription, setSelectedTranscription] = useState<Transcription | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [historyCollapsed, setHistoryCollapsed] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const navigate = useNavigate();
 
@@ -179,76 +181,103 @@ export default function Dashboard() {
           </Button>
         </div>
 
-        {/* Content - Layout 30/70 */}
+        {/* Content - Layout with collapsible history */}
         <div className="flex gap-6">
-          {/* Transcriptions List - Compact 30% */}
-          <div className="w-full lg:w-[30%] lg:min-w-[280px] lg:max-w-[360px] space-y-3">
-            <h2 className="text-sm font-semibold flex items-center gap-2 text-muted-foreground uppercase tracking-wide">
-              <Clock className="h-4 w-4" />
-              Historial
-              <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-xs">
-                {filteredTranscriptions.length}
-              </span>
-            </h2>
+          {/* Transcriptions List - Collapsible */}
+          <div 
+            className={`transition-all duration-300 space-y-3 ${
+              historyCollapsed 
+                ? 'w-12 min-w-12 max-w-12' 
+                : 'w-full lg:w-[30%] lg:min-w-[280px] lg:max-w-[360px]'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+                onClick={() => setHistoryCollapsed(!historyCollapsed)}
+                title={historyCollapsed ? 'Expandir historial' : 'Colapsar historial'}
+              >
+                {historyCollapsed ? (
+                  <PanelLeft className="h-4 w-4" />
+                ) : (
+                  <PanelLeftClose className="h-4 w-4" />
+                )}
+              </Button>
+              {!historyCollapsed && (
+                <h2 className="text-sm font-semibold flex items-center gap-2 text-muted-foreground uppercase tracking-wide flex-1">
+                  <Clock className="h-4 w-4" />
+                  Historial
+                  <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-xs">
+                    {filteredTranscriptions.length}
+                  </span>
+                </h2>
+              )}
+            </div>
 
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              </div>
-            ) : filteredTranscriptions.length === 0 ? (
-              <Card className="border-dashed">
-                <CardContent className="flex flex-col items-center justify-center py-8">
-                  <FileText className="mb-2 h-8 w-8 text-muted-foreground/50" />
-                  <p className="text-center text-sm text-muted-foreground">
-                    {searchQuery ? 'Sin resultados' : 'Sin transcripciones'}
-                  </p>
-                  {!searchQuery && (
-                    <Button 
-                      variant="link" 
-                      size="sm"
-                      onClick={() => setShowNewModal(true)}
-                      className="mt-1"
-                    >
-                      Crear primera
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-2 max-h-[calc(100vh-220px)] overflow-y-auto pr-1">
-                {filteredTranscriptions.map((t) => (
-                  <Card 
-                    key={t.id}
-                    className={`cursor-pointer transition-all hover:shadow-sm hover:bg-accent/50 ${
-                      selectedTranscription?.id === t.id ? 'ring-2 ring-primary bg-accent/30' : ''
-                    }`}
-                    onClick={() => setSelectedTranscription(t)}
-                  >
-                    <CardContent className="flex items-center gap-3 p-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
-                        {platformIcons[t.platform] || <FileText className="h-3 w-3" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-medium truncate">{t.title}</h3>
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(t.created_at), "d MMM, HH:mm", { locale: es })}
-                        </p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 opacity-0 group-hover:opacity-100 hover:opacity-100"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(t.id);
-                        }}
-                      >
-                        <Trash2 className="h-3 w-3 text-destructive" />
-                      </Button>
+            {!historyCollapsed && (
+              <>
+                {loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                ) : filteredTranscriptions.length === 0 ? (
+                  <Card className="border-dashed">
+                    <CardContent className="flex flex-col items-center justify-center py-8">
+                      <FileText className="mb-2 h-8 w-8 text-muted-foreground/50" />
+                      <p className="text-center text-sm text-muted-foreground">
+                        {searchQuery ? 'Sin resultados' : 'Sin transcripciones'}
+                      </p>
+                      {!searchQuery && (
+                        <Button 
+                          variant="link" 
+                          size="sm"
+                          onClick={() => setShowNewModal(true)}
+                          className="mt-1"
+                        >
+                          Crear primera
+                        </Button>
+                      )}
                     </CardContent>
                   </Card>
-                ))}
-              </div>
+                ) : (
+                  <div className="space-y-2 max-h-[calc(100vh-220px)] overflow-y-auto pr-1">
+                    {filteredTranscriptions.map((t) => (
+                      <Card 
+                        key={t.id}
+                        className={`cursor-pointer transition-all hover:shadow-sm hover:bg-accent/50 ${
+                          selectedTranscription?.id === t.id ? 'ring-2 ring-primary bg-accent/30' : ''
+                        }`}
+                        onClick={() => setSelectedTranscription(t)}
+                      >
+                        <CardContent className="flex items-center gap-3 p-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
+                            {platformIcons[t.platform] || <FileText className="h-3 w-3" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-sm font-medium truncate">{t.title}</h3>
+                            <p className="text-xs text-muted-foreground">
+                              {format(new Date(t.created_at), "d MMM, HH:mm", { locale: es })}
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 opacity-0 group-hover:opacity-100 hover:opacity-100"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(t.id);
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3 text-destructive" />
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
 
