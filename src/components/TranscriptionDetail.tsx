@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Copy, Download, X, ExternalLink, Calendar, Globe, Brain, Loader2, FileText } from 'lucide-react';
+import { Copy, Download, X, ExternalLink, Calendar, Globe, Brain, Loader2, FileText, FileCode } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Transcription } from '@/hooks/useTranscriptions';
@@ -379,6 +379,184 @@ export default function TranscriptionDetail({
     toast.success('PDF descargado correctamente');
   };
 
+  const exportAnalysisMarkdown = () => {
+    const analysis = transcription.analysis as any;
+    if (!analysis) {
+      toast.error('No hay análisis para exportar');
+      return;
+    }
+
+    let md = '';
+    
+    // Header
+    md += `# ${transcription.title}\n\n`;
+    md += `> **Plataforma:** ${transcription.platform} | **Fecha:** ${format(new Date(transcription.created_at), "d MMM yyyy", { locale: es })}\n\n`;
+    md += `---\n\n`;
+
+    // Transcripción
+    md += `## 📄 Transcripción Completa\n\n`;
+    md += `\`\`\`\n${transcription.transcript}\n\`\`\`\n\n`;
+
+    // Metadata
+    if (analysis.metadata) {
+      md += `## ℹ️ Información General\n\n`;
+      if (analysis.metadata.creador) md += `- **Creador:** ${analysis.metadata.creador}\n`;
+      if (analysis.metadata.plataforma) md += `- **Plataforma:** ${analysis.metadata.plataforma}\n`;
+      if (analysis.metadata.duracion_aproximada) md += `- **Duración:** ${analysis.metadata.duracion_aproximada}\n`;
+      md += `\n`;
+    }
+
+    // Nivel de consciencia
+    if (analysis.nivel_consciencia) {
+      md += `## 🎯 Nivel de Consciencia\n\n`;
+      md += `**${analysis.nivel_consciencia.nivel || 'No identificado'}**\n\n`;
+      if (analysis.nivel_consciencia.justificacion) {
+        md += `${analysis.nivel_consciencia.justificacion}\n\n`;
+      }
+    }
+
+    // Helper para personalidades
+    const formatPersonalities = (personalities: any[]) => {
+      if (!personalities?.length) return '';
+      let result = '';
+      personalities.forEach((p) => {
+        if (!p) return;
+        result += `| ${p.rol || 'N/A'} | ${p.personaje || 'N/A'} | ${p.nombre || 'N/A'} | ${p.justificacion || 'N/A'} |\n`;
+      });
+      return result;
+    };
+
+    // Hook
+    if (analysis.hook) {
+      md += `## 🎣 Análisis del Hook\n\n`;
+      if (analysis.hook.transcripcion_exacta) {
+        md += `### Transcripción\n\n`;
+        md += `> "${analysis.hook.transcripcion_exacta}"\n\n`;
+      }
+      if (analysis.hook.personalidades?.length) {
+        md += `### Personalidades\n\n`;
+        md += `| Rol | Personaje | Nombre | Justificación |\n`;
+        md += `|-----|-----------|--------|---------------|\n`;
+        md += formatPersonalities(analysis.hook.personalidades);
+        md += `\n`;
+      }
+      if (analysis.hook.mecanismo_retencion?.length) {
+        md += `### Mecanismos de Retención\n\n`;
+        analysis.hook.mecanismo_retencion.forEach((m: string) => {
+          md += `- ${m}\n`;
+        });
+        md += `\n`;
+      }
+    }
+
+    // Body
+    if (analysis.body) {
+      md += `## 📝 Análisis del Body\n\n`;
+      if (analysis.body.estructura_identificada) {
+        md += `### Estructura\n\n${analysis.body.estructura_identificada}\n\n`;
+      }
+      if (analysis.body.personalidades?.length) {
+        md += `### Personalidades\n\n`;
+        md += `| Rol | Personaje | Nombre | Justificación |\n`;
+        md += `|-----|-----------|--------|---------------|\n`;
+        md += formatPersonalities(analysis.body.personalidades);
+        md += `\n`;
+      }
+      if (analysis.body.transiciones?.length) {
+        md += `### Transiciones\n\n`;
+        analysis.body.transiciones.forEach((t: any, idx: number) => {
+          md += `**Transición ${idx + 1}:**\n`;
+          if (t.cita) md += `> "${t.cita}"\n`;
+          md += `- Creador (${t.creador_p || 'N/A'}): ${t.creador_porque || ''}\n`;
+          md += `- Receptor (${t.receptor_p || 'N/A'}): ${t.receptor_porque || ''}\n\n`;
+        });
+      }
+    }
+
+    // CTA
+    if (analysis.cta) {
+      md += `## 🎯 Análisis del CTA\n\n`;
+      if (analysis.cta.transcripcion_exacta) {
+        md += `### Transcripción\n\n`;
+        md += `> "${analysis.cta.transcripcion_exacta}"\n\n`;
+      }
+      if (analysis.cta.tipo_cta) {
+        md += `**Tipo de CTA:** ${analysis.cta.tipo_cta}\n\n`;
+      }
+      if (analysis.cta.descripcion_cta) {
+        md += `${analysis.cta.descripcion_cta}\n\n`;
+      }
+      if (analysis.cta.personalidades?.length) {
+        md += `### Personalidades\n\n`;
+        md += `| Rol | Personaje | Nombre | Justificación |\n`;
+        md += `|-----|-----------|--------|---------------|\n`;
+        md += formatPersonalities(analysis.cta.personalidades);
+        md += `\n`;
+      }
+    }
+
+    // Secuencia de personajes
+    if (analysis.secuencia_personajes) {
+      md += `## 🔄 Secuencia de Personajes\n\n`;
+      const seq = analysis.secuencia_personajes;
+      if (seq.creador) md += `- **Creador:** ${seq.creador}\n`;
+      if (seq.receptor) md += `- **Receptor:** ${seq.receptor}\n`;
+      if (seq.patron_dominante) {
+        md += `\n**Patrón Dominante:** ${seq.patron_dominante}\n`;
+      }
+      md += `\n`;
+    }
+
+    // Fórmula replicable
+    if (analysis.formula_replicable) {
+      md += `## ✨ Fórmula Replicable\n\n`;
+      if (analysis.formula_replicable.patron_una_linea) {
+        md += `> **${analysis.formula_replicable.patron_una_linea}**\n\n`;
+      }
+      if (analysis.formula_replicable.template) {
+        md += `### Template\n\n\`\`\`\n${analysis.formula_replicable.template}\n\`\`\`\n\n`;
+      }
+    }
+
+    // Síntesis
+    if (analysis.sintesis) {
+      md += `## 💡 Síntesis Final\n\n`;
+      if (analysis.sintesis.elementos_replicables?.length) {
+        md += `### ✅ Elementos Replicables\n\n`;
+        analysis.sintesis.elementos_replicables.forEach((e: string) => {
+          md += `- ✓ ${e}\n`;
+        });
+        md += `\n`;
+      }
+      if (analysis.sintesis.elementos_no_copiables?.length) {
+        md += `### ❌ Elementos No Copiables\n\n`;
+        analysis.sintesis.elementos_no_copiables.forEach((e: string) => {
+          md += `- ✗ ${e}\n`;
+        });
+        md += `\n`;
+      }
+      if (analysis.sintesis.aplicacion_inmediata) {
+        md += `### 🚀 Aplicación Inmediata\n\n`;
+        md += `> ${analysis.sintesis.aplicacion_inmediata}\n\n`;
+      }
+    }
+
+    // Footer
+    md += `---\n\n`;
+    md += `*Generado con Video Analyzer - ${format(new Date(), "d MMM yyyy, HH:mm", { locale: es })}*\n`;
+
+    // Download
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const fileName = `analisis-${transcription.title.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '-').substring(0, 50)}.md`;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Markdown descargado correctamente');
+  };
+
   return (
     <Card className="animate-fade-in">
       <CardHeader className="pb-4">
@@ -430,10 +608,16 @@ export default function TranscriptionDetail({
                 Subtítulos (.srt)
               </DropdownMenuItem>
               {transcription.analysis && (
-                <DropdownMenuItem onClick={exportAnalysisPDF}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Análisis PDF
-                </DropdownMenuItem>
+                <>
+                  <DropdownMenuItem onClick={exportAnalysisPDF}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Análisis PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={exportAnalysisMarkdown}>
+                    <FileCode className="mr-2 h-4 w-4" />
+                    Análisis Markdown (.md)
+                  </DropdownMenuItem>
+                </>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
