@@ -1,0 +1,12 @@
+name: Deploy a PRUEBAS
+on:
+  push:
+    branches: [develop]
+jobs:
+  deploy:
+    uses: mazeos/maze-infra/.github/workflows/deploy.yml@main
+    with:
+      app_dir: /opt/short-form-transcriber-dev
+      branch: develop
+      compose_file: docker-compose.deploy.yml
+    secrets: inherit

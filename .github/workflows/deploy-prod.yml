@@ -1,0 +1,12 @@
+name: Deploy a PRODUCCION
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    uses: mazeos/maze-infra/.github/workflows/deploy.yml@main
+    with:
+      app_dir: /opt/short-form-transcriber
+      branch: main
+      compose_file: docker-compose.deploy.yml
+    secrets: inherit
