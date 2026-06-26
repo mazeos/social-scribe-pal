@@ -8,5 +8,5 @@ jobs:
     with:
       app_dir: /opt/short-form-transcriber-dev
       branch: develop
-      compose_file: docker-compose.deploy.yml
+      compose_file: docker-compose.dev.yml
     secrets: inherit
