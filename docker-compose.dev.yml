@@ -1,0 +1,18 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.deploy
+    restart: unless-stopped
+    networks:
+      - traefik-public
+    labels:
+      - traefik.enable=true
+      - "traefik.http.routers.script-dev.rule=Host(`script-test.mazefunnels.io`)"
+      - traefik.http.routers.script-dev.entrypoints=websecure
+      - traefik.http.routers.script-dev.tls.certresolver=letsencrypt
+      - traefik.http.services.script-dev.loadbalancer.server.port=80
+
+networks:
+  traefik-public:
+    external: true
